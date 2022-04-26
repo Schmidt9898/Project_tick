@@ -82,8 +82,8 @@ def mat_2_tex(mat,texture=None):
 
 
 class Game_Gui(Gui_Window):
-	def __init__(self):
-		super(Game_Gui, self).__init__()
+	def __init__(self, w, h):
+		super(Game_Gui, self).__init__(w,h)
 		self.texture=None
 
 

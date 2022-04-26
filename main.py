@@ -5,9 +5,11 @@ from Gui import Game_Gui
 import glfw
 
 if __name__ == "__main__" :
+    width = 640
+    height = 480
     vs = WebcamVideoStream().start()
     hands = handsDetector()
-    tw= Game_Gui()
+    tw= Game_Gui(width, height)
 
     while not glfw.window_should_close(tw.window):
         try:

@@ -4,10 +4,8 @@ from threading import Thread, Lock
 import cv2
 
 class WebcamVideoStream :
-    def __init__(self, src = 0, width = 320, height = 240) :
+    def __init__(self, src = 0) :
         self.stream = cv2.VideoCapture(src, cv2.CAP_DSHOW)
-        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         (self.grabbed, self.frame) = self.stream.read()
         self.started = False
         self.read_lock = Lock()
