@@ -41,8 +41,13 @@ class Gui_Window:
 		self.jb = self.io.fonts.add_font_from_file_ttf(path_to_font, 30) if path_to_font is not None else None
 		self.impl.refresh_font_texture()
 
-	def main(self):
+	def context(self):
 		imgui.show_test_window()
+
+	def terminate(self):
+		self.impl.shutdown()
+		glfw.terminate()
+
 
 	def render_frame(self):
 			glfw.poll_events()
@@ -54,7 +59,7 @@ class Gui_Window:
 
 			if self.jb is not None:
 				imgui.push_font(self.jb)
-			self.main()
+			self.context()
 			if self.jb is not None:
 				imgui.pop_font()
 
@@ -65,8 +70,7 @@ class Gui_Window:
 	def start_loop(self):
 		while not glfw.window_should_close(self.window):
 			self.render_frame()
-		self.impl.shutdown()
-		glfw.terminate()
+
 		
 
 
@@ -97,7 +101,10 @@ class Game_Gui(Gui_Window):
 		self.texture=None
 
 	
-	def main(self):
+	def context(self):
+
+
+
 		im=get_cam_image()
 		im=cv.flip(im,1) # mirror the image
 		self.texture,w,h = mat_2_tex(im,self.texture)
@@ -105,6 +112,8 @@ class Game_Gui(Gui_Window):
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
 		imgui.set_next_window_size(w, h)
 		imgui.begin("image",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE)
+		if imgui.button("asd"):
+			print("pressed")
 		#imgui.text('An image:')
 		imgui.image(self.texture, w, h)
 		imgui.end()
@@ -114,3 +123,5 @@ if __name__ == "__main__":
 	#tw= Gui_Window()
 	tw= Game_Gui()
 	tw.start_loop()
+	tw.terminate()
+	cv.destroyAllWindows()
