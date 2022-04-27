@@ -3,8 +3,8 @@ import glfw
 import OpenGL.GL as gl
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
-import cv2 as cv 
-
+import cv2 as cv
+import numpy as np
 
 path_to_font = None  # "path/to/font.ttf"
 
@@ -40,6 +40,7 @@ class Gui_Window:
 		self.io = imgui.get_io()
 		self.jb = self.io.fonts.add_font_from_file_ttf(path_to_font, 30) if path_to_font is not None else None
 		self.impl.refresh_font_texture()
+		self.frame = np.zeros((h,w,3), np.uint8)
 
 	def context(self):
 		imgui.show_test_window()
@@ -72,6 +73,8 @@ class Gui_Window:
 			self.render_frame()
 
 		
+#def set_frame(self, frame):
+#	self.frame = frame
 
 
 cam = cv.VideoCapture(0)#this gives the error message when exit
@@ -96,18 +99,14 @@ def mat_2_tex(mat,texture=None):
 
 
 class Game_Gui(Gui_Window):
-	def __init__(self):
-		super(Game_Gui, self).__init__()
+	def __init__(self, w, h):
+		super(Game_Gui, self).__init__(w,h)
 		self.texture=None
 
-	
-	def context(self):
 
+	def process(self):
 
-
-		im=get_cam_image()
-		im=cv.flip(im,1) # mirror the image
-		self.texture,w,h = mat_2_tex(im,self.texture)
+		self.texture,w,h = mat_2_tex(self.frame,self.texture)
 		io = imgui.get_io()
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
 		imgui.set_next_window_size(w, h)
@@ -120,8 +119,8 @@ class Game_Gui(Gui_Window):
 		
 
 if __name__ == "__main__":
-	#tw= Gui_Window()
-	tw= Game_Gui()
+	tw= Gui_Window()
+	#tw= Game_Gui()
 	tw.start_loop()
 	tw.terminate()
 	cv.destroyAllWindows()
