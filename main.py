@@ -11,11 +11,7 @@ if __name__ == "__main__":
     hands = handsDetector()
     tw = Game_Gui(width, height)
     prevHandState = ""
-    test_array = [
-        "o", "o", "",
-        "x", "", "x",
-        "x", "o", "",
-    ]
+
     while not glfw.window_should_close(tw.window):
         try:
             frame = vs.read()

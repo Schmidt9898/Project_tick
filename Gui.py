@@ -96,10 +96,11 @@ class Game_Gui(Gui_Window):
 		self.height = h
 		self.xgrids = xgrids
 		self.ygrids = ygrids
+		self.playerSymbol = "x"
 		self.board = [
-        "", "o", "",
-        "", "o", "",
-        "", "o", "o",
+        "", "", "",
+        "", "", "",
+        "", "", "",
     	]
 
 
@@ -124,8 +125,8 @@ class Game_Gui(Gui_Window):
 		draw_list.add_circle(x_center, y_center, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1), thickness=3)
 
 	def put_x(self, position):
-		xshift = position%3 + 1
-		yshift = int(position/3)+1
+		xshift = position%self.xgrids + 1
+		yshift = int(position/self.ygrids)+1
 		x_center = (2*xshift -1 )*self.width/self.xgrids/2
 		y_center = (2*yshift -1 )*self.height/self.ygrids/2
 		line_width = self.height/self.ygrids/3
@@ -141,6 +142,30 @@ class Game_Gui(Gui_Window):
 			imgui.get_color_u32_rgba(1,1,0,1), 3
 			)
 
+	def findSquareNumber(self, cursorPosition):
+		xprev = 0
+		yprev = 0
+		for i in range(self.xgrids*self.ygrids):
+			xshift = i%self.xgrids + 1
+			yshift = int(i/self.ygrids)+1
+			x_pos = (xshift)*self.width/self.xgrids
+			y_pos = (yshift)*self.height/self.ygrids
+
+			if xshift == 1:
+				xprev = 0
+
+			if (cursorPosition[0] < x_pos and
+				cursorPosition[0] > xprev and
+				cursorPosition[1] < y_pos and
+				cursorPosition[1] > yprev):
+				return i
+
+			xprev = x_pos
+			y_pos = y_pos
+
+	def editBoardSquare(self, squareNumber):
+		self.board[squareNumber] = self.playerSymbol
+
 	def context(self):
 
 		self.texture,w,h = mat_2_tex(self.frame,self.texture)
@@ -152,10 +177,15 @@ class Game_Gui(Gui_Window):
 		imgui.image(self.texture, w, h)
 		self.drawGrid()
 
+		if self.putCursor:
+			squareNumber = self.findSquareNumber(self.cursorPosition)
+			self.editBoardSquare(squareNumber)
+			self.putCursor = False
+
 		for idx,item in enumerate(self.board):
 			if item == "o":
 				self.put_o(idx)
-			else:
+			elif item == "x":
 				self.put_x(idx)
 
 		imgui.end()

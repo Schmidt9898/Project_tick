@@ -65,4 +65,3 @@ class handsDetector:
 
     def getBoardPosition(self):
         return [self.cursorPosition/self.width, self.cursorPosition/self.height]
-
