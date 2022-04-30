@@ -40,7 +40,6 @@ class Gui_Window:
 		self.io = imgui.get_io()
 		self.jb = self.io.fonts.add_font_from_file_ttf(path_to_font, 30) if path_to_font is not None else None
 		self.impl.refresh_font_texture()
-		self.frame = np.zeros((h,w,3), np.uint8)
 
 	def context(self):
 		imgui.show_test_window()
@@ -72,18 +71,6 @@ class Gui_Window:
 		while not glfw.window_should_close(self.window):
 			self.render_frame()
 
-		
-#def set_frame(self, frame):
-#	self.frame = frame
-
-
-cam = cv.VideoCapture(0)#this gives the error message when exit
-def get_cam_image():
-	s, image = cam.read()
-	if s:
-		return image
-
-
 # load image to vram texture
 def mat_2_tex(mat,texture=None):
 	h,w,_=mat.shape
@@ -99,24 +86,80 @@ def mat_2_tex(mat,texture=None):
 
 
 class Game_Gui(Gui_Window):
-	def __init__(self, w, h):
-		super(Game_Gui, self).__init__(w,h)
+	def __init__(self, w, h , xgrids=3, ygrids=3):
+		super(Game_Gui, self).__init__()
 		self.texture=None
+		self.putCursor = False
+		self.cursorPosition = [0, 0]
+		self.frame = np.zeros((h,w,3), np.uint8)
+		self.width = w
+		self.height = h
+		self.xgrids = xgrids
+		self.ygrids = ygrids
+		self.board = [
+        "", "o", "",
+        "", "o", "",
+        "", "o", "o",
+    	]
 
 
-	def process(self):
+
+	def set_frame(self, frame):
+		self.frame = frame
+
+	def drawGrid(self):
+		draw_list = imgui.get_window_draw_list()
+
+		draw_list.add_line(self.width/3, 0, self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
+		draw_list.add_line(2*self.width/3, 0, 2*self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
+		draw_list.add_line(0, self.height/3, self.width, self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
+		draw_list.add_line(0, 2*self.height/3, self.width, 2*self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
+
+	def put_o(self, position):
+		xshift = position%self.xgrids + 1
+		yshift = int(position/self.ygrids)+1
+		x_center = (2*xshift -1 )*self.width/self.xgrids/2
+		y_center = (2*yshift -1 )*self.height/self.ygrids/2
+		draw_list = imgui.get_window_draw_list()
+		draw_list.add_circle(x_center, y_center, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1), thickness=3)
+
+	def put_x(self, position):
+		xshift = position%3 + 1
+		yshift = int(position/3)+1
+		x_center = (2*xshift -1 )*self.width/self.xgrids/2
+		y_center = (2*yshift -1 )*self.height/self.ygrids/2
+		line_width = self.height/self.ygrids/3
+		draw_list = imgui.get_window_draw_list()
+		draw_list.add_line(
+			x_center-line_width, y_center-line_width,
+			x_center+line_width, y_center+line_width,
+			imgui.get_color_u32_rgba(1,1,0,1), 3
+			)
+		draw_list.add_line(
+			x_center-line_width, y_center+line_width,
+			x_center+line_width, y_center-line_width,
+			imgui.get_color_u32_rgba(1,1,0,1), 3
+			)
+
+	def context(self):
 
 		self.texture,w,h = mat_2_tex(self.frame,self.texture)
 		io = imgui.get_io()
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
 		imgui.set_next_window_size(w, h)
 		imgui.begin("image",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE)
-		if imgui.button("asd"):
-			print("pressed")
-		#imgui.text('An image:')
+
 		imgui.image(self.texture, w, h)
+		self.drawGrid()
+
+		for idx,item in enumerate(self.board):
+			if item == "o":
+				self.put_o(idx)
+			else:
+				self.put_x(idx)
+
 		imgui.end()
-		
+
 
 if __name__ == "__main__":
 	tw= Gui_Window()
