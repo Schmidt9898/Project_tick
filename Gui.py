@@ -42,8 +42,13 @@ class Gui_Window:
 		self.impl.refresh_font_texture()
 		self.frame = np.zeros((h,w,3), np.uint8)
 
-	def process(self):
+	def context(self):
 		imgui.show_test_window()
+
+	def terminate(self):
+		self.impl.shutdown()
+		glfw.terminate()
+
 
 	def render_frame(self):
 			glfw.poll_events()
@@ -55,7 +60,7 @@ class Gui_Window:
 
 			if self.jb is not None:
 				imgui.push_font(self.jb)
-			self.process()
+			self.context()
 			if self.jb is not None:
 				imgui.pop_font()
 
@@ -63,8 +68,20 @@ class Gui_Window:
 			self.impl.render(imgui.get_draw_data())
 			glfw.swap_buffers(self.window)
 
-	def set_frame(self, frame):
-		self.frame = frame
+	def start_loop(self):
+		while not glfw.window_should_close(self.window):
+			self.render_frame()
+
+		
+#def set_frame(self, frame):
+#	self.frame = frame
+
+
+cam = cv.VideoCapture(0)#this gives the error message when exit
+def get_cam_image():
+	s, image = cam.read()
+	if s:
+		return image
 
 
 # load image to vram texture
@@ -94,6 +111,16 @@ class Game_Gui(Gui_Window):
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
 		imgui.set_next_window_size(w, h)
 		imgui.begin("image",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE)
+		if imgui.button("asd"):
+			print("pressed")
 		#imgui.text('An image:')
 		imgui.image(self.texture, w, h)
 		imgui.end()
+		
+
+if __name__ == "__main__":
+	tw= Gui_Window()
+	#tw= Game_Gui()
+	tw.start_loop()
+	tw.terminate()
+	cv.destroyAllWindows()
