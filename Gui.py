@@ -5,6 +5,7 @@ import imgui
 from imgui.integrations.glfw import GlfwRenderer
 import cv2 as cv
 import numpy as np
+from Gamelogic import Tictactoe
 
 path_to_font = None  # "path/to/font.ttf"
 
@@ -96,12 +97,9 @@ class Game_Gui(Gui_Window):
 		self.height = h
 		self.xgrids = xgrids
 		self.ygrids = ygrids
-		self.playerSymbol = "x"
-		self.board = [
-        "", "", "",
-        "", "", "",
-        "", "", "",
-    	]
+
+		self.g=Tictactoe()
+		self.playerNumber = 0
 
 
 
@@ -163,9 +161,6 @@ class Game_Gui(Gui_Window):
 			xprev = x_pos
 			y_pos = y_pos
 
-	def editBoardSquare(self, squareNumber):
-		self.board[squareNumber] = self.playerSymbol
-
 	def context(self):
 
 		self.texture,w,h = mat_2_tex(self.frame,self.texture)
@@ -179,10 +174,10 @@ class Game_Gui(Gui_Window):
 
 		if self.putCursor:
 			squareNumber = self.findSquareNumber(self.cursorPosition)
-			self.editBoardSquare(squareNumber)
+			self.g.step(self.playerNumber,squareNumber)
 			self.putCursor = False
 
-		for idx,item in enumerate(self.board):
+		for idx,item in enumerate(self.g.get_state()):
 			if item == "o":
 				self.put_o(idx)
 			elif item == "x":

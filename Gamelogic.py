@@ -1,4 +1,3 @@
-print("asd")
 import numpy as np
 
 class Tictactoe():
@@ -30,7 +29,7 @@ class Tictactoe():
 		for m in range(2):
 			if len(self.marks[m])<3:
 				continue
-			o= self.marks[m].copy() 
+			o= self.marks[m].copy()
 			o.sort()
 			i = o[0]
 			#check horizontal
@@ -45,8 +44,8 @@ class Tictactoe():
 			if o==[2,4,6]:
 				return m
 		return None
-		
-		
+
+
 
 
 	def get_state(self):
@@ -94,7 +93,7 @@ if __name__ == "__main__":
 		if g.is_win() is not None:
 			print("winner is ",g.is_win())
 			break
-	
-	
+
+
 
 
