@@ -21,7 +21,8 @@ class handsDetector:
         self.state = "Unknown"
         self.height = 0
         self.width = 0
-        self.cursorPosition = 0
+        self.cursorPosition = [0,0]
+        self.boardPosition = 0
 
     def getHandAction(self, frame):
 
@@ -62,3 +63,5 @@ class handsDetector:
 
                 self.cursorPosition = tTip
 
+    def getBoardPosition(self):
+        return [self.cursorPosition/self.width, self.cursorPosition/self.height]
