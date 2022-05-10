@@ -35,10 +35,10 @@ class Tictactoe():
 			o.sort()
 			i = o[0]
 			#check horizontal
-			if i+1 == o[1] and i+2 == o[2]:
+			if i%3 == 0 and i+1 == o[1] and i+2 == o[2]:
 				return m
 			#check vertical
-			if i+3 == o[1] and i+6 == o[2]:
+			if i/3 < 1 and i+3 == o[1] and i+6 == o[2]:
 				return m
 			#check diagonal
 			if o==[0,4,8]:
