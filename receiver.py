@@ -12,7 +12,7 @@ while True:
 	if s == "get":
 		tn.refresh_playes()
 	elif s == "in":
-		print(tn.inbox)
+		print(tn.get_messages())
 	else:
 		tn.send({"data":s})
 		print(tn.clients_avil)

@@ -103,7 +103,8 @@ class Tic_net_client():
 		pass
 	
 	def get_messages(self):
-		t=[msg for msg in self.inbox] # convert to obj from json
+		t=self.inbox
+		#t=[msg for msg in self.inbox]
 		self.inbox=[]
 		return t
 
@@ -120,7 +121,7 @@ class Tic_net_client():
 				if msg["type"] == "PING":
 					continue
 
-				print(msg)
+				#print(msg)
 				if msg["type"] == "WHO":
 					#print("-----i am sending my id")
 					sent = self.send({"type":"IAM","id":self.id,"name":self.name})
@@ -139,15 +140,11 @@ class Tic_net_client():
 				pass
 
 
-
-
-
-
 	def Start(self):
-		
 		self.receiver_thread = threading.Thread(target=self.receiver_loop)
 		self.receiver_thread.setDaemon(True)
 		self.receiver_thread.start()
+		tn.send({"data":"init"})
 
 
 
@@ -155,11 +152,6 @@ if __name__ == "__main__":
 	tn=Tic_net_server()
 	tn.Start()
 	
-
-
-
-
-
 
 
 #
