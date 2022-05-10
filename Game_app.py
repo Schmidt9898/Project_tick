@@ -6,7 +6,7 @@ import cv2
 import traceback
 import imgui
 from server import Tic_net_client
-
+import datetime
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	#imgui.dummy(sx,sy)
@@ -129,10 +129,24 @@ class Game(Gui_Window):
 		else:
 			pass
 
-		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-			draw_list.add_circle_filled(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
+		if self.hands.holdStatus == 0:
+			circle_color = imgui.get_color_u32_rgba(0.1,0.7,0.8,1)
 		else:
-			draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
+			circle_color = imgui.get_color_u32_rgba(0.8,0.7,0.1,1)
+
+		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
+			draw_list.add_circle_filled(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15, circle_color) # cursore draw
+		else:
+			draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, circle_color) # cursore draw
+
+
+		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
+			time_delta = (datetime.datetime.now() - self.hands.closedTime).total_seconds()
+			if time_delta != 0 :
+				time_prop = (self.hands.holdTime/(time_delta))
+				if time_prop > 5:
+					time_prop = 5
+				draw_list.add_circle(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15*(time_prop), circle_color) # cursore draw
 		imgui.end()
 		imgui.pop_style_color(1)
 
