@@ -12,7 +12,6 @@ path_to_font = None  # "path/to/font.ttf"
 
 def impl_glfw_init(w,h,window_name = "Test title"):
 	width, height = w, h
-	#window_name = "Tic Tac yeeee"
 
 	if not glfw.init():
 		print("Could not initialize OpenGL context")
@@ -25,6 +24,8 @@ def impl_glfw_init(w,h,window_name = "Test title"):
 
 	window = glfw.create_window(int(width), int(height), window_name, None, None)
 	glfw.make_context_current(window)
+	glfw.swap_interval(1)
+	#glfw.glfwSwapInterval( 0 );
 
 	if not window:
 		glfw.terminate()
@@ -34,9 +35,9 @@ def impl_glfw_init(w,h,window_name = "Test title"):
 	return window
 
 class Gui_Window:
-	def __init__(self,w=640,h=480):
+	def __init__(self,w=640,h=480,title="None was given"):
 		imgui.create_context()
-		self.window = impl_glfw_init(w,h)
+		self.window = impl_glfw_init(w,h,title)
 		self.impl = GlfwRenderer(self.window)
 		self.io = imgui.get_io()
 		self.jb = self.io.fonts.add_font_from_file_ttf(path_to_font, 30) if path_to_font is not None else None
@@ -60,7 +61,9 @@ class Gui_Window:
 
 			if self.jb is not None:
 				imgui.push_font(self.jb)
+			self.set_style()
 			self.context()
+			self.pop_style()
 			if self.jb is not None:
 				imgui.pop_font()
 
@@ -72,119 +75,27 @@ class Gui_Window:
 		while not glfw.window_should_close(self.window):
 			self.render_frame()
 
+	def set_style(self):
+		pass
+	def pop_style(self):
+		pass
+
 # load image to vram texture
 def mat_2_tex(mat,texture=None):
 	h,w,_=mat.shape
 	#cv.imshow("mat_2_tex",mat)
 	if texture is None:
 		texture = gl.glGenTextures(1)
+	gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1);
 	gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
 	gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
 	gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-	gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, w, h, 0, gl.GL_BGR,gl.GL_UNSIGNED_BYTE, mat)
+	if mat.shape[-1] == 4:
+		gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, w, h, 0, gl.GL_BGRA,gl.GL_UNSIGNED_BYTE, mat)
+	else:
+		gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, w, h, 0, gl.GL_BGR,gl.GL_UNSIGNED_BYTE, mat)
 	return texture, w, h
-	#do not forget to delete the textures
-
-
-class Game_Gui(Gui_Window):
-	def __init__(self, w, h , xgrids=3, ygrids=3):
-		super(Game_Gui, self).__init__()
-		self.texture=None
-		self.putCursor = False
-		self.cursorPosition = [0, 0]
-		self.frame = np.zeros((h,w,3), np.uint8)
-		self.width = w
-		self.height = h
-		self.xgrids = xgrids
-		self.ygrids = ygrids
-
-		self.g=Tictactoe()
-		self.playerNumber = 0
-
-
-
-	def set_frame(self, frame):
-		self.frame = frame
-
-	def drawGrid(self):
-		draw_list = imgui.get_window_draw_list()
-
-		draw_list.add_line(self.width/3, 0, self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
-		draw_list.add_line(2*self.width/3, 0, 2*self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
-		draw_list.add_line(0, self.height/3, self.width, self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
-		draw_list.add_line(0, 2*self.height/3, self.width, 2*self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
-
-	def put_o(self, position):
-		xshift = position%self.xgrids + 1
-		yshift = int(position/self.ygrids)+1
-		x_center = (2*xshift -1 )*self.width/self.xgrids/2
-		y_center = (2*yshift -1 )*self.height/self.ygrids/2
-		draw_list = imgui.get_window_draw_list()
-		draw_list.add_circle(x_center, y_center, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1), thickness=3)
-
-	def put_x(self, position):
-		xshift = position%self.xgrids + 1
-		yshift = int(position/self.ygrids)+1
-		x_center = (2*xshift -1 )*self.width/self.xgrids/2
-		y_center = (2*yshift -1 )*self.height/self.ygrids/2
-		line_width = self.height/self.ygrids/3
-		draw_list = imgui.get_window_draw_list()
-		draw_list.add_line(
-			x_center-line_width, y_center-line_width,
-			x_center+line_width, y_center+line_width,
-			imgui.get_color_u32_rgba(1,1,0,1), 3
-			)
-		draw_list.add_line(
-			x_center-line_width, y_center+line_width,
-			x_center+line_width, y_center-line_width,
-			imgui.get_color_u32_rgba(1,1,0,1), 3
-			)
-
-	def findSquareNumber(self, cursorPosition):
-		xprev = 0
-		yprev = 0
-		for i in range(self.xgrids*self.ygrids):
-			xshift = i%self.xgrids + 1
-			yshift = int(i/self.ygrids)+1
-			x_pos = (xshift)*self.width/self.xgrids
-			y_pos = (yshift)*self.height/self.ygrids
-
-			if xshift == 1:
-				xprev = 0
-
-			if (cursorPosition[0] < x_pos and
-				cursorPosition[0] > xprev and
-				cursorPosition[1] < y_pos and
-				cursorPosition[1] > yprev):
-				return i
-
-			xprev = x_pos
-			y_pos = y_pos
-
-	def context(self):
-
-		self.texture,w,h = mat_2_tex(self.frame,self.texture)
-		io = imgui.get_io()
-		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
-		imgui.set_next_window_size(w, h)
-		imgui.begin("image",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE)
-
-		imgui.image(self.texture, w, h)
-		self.drawGrid()
-
-		if self.putCursor:
-			squareNumber = self.findSquareNumber(self.cursorPosition)
-			self.g.step(self.playerNumber,squareNumber)
-			self.putCursor = False
-
-		for idx,item in enumerate(self.g.get_state()):
-			if item == "o":
-				self.put_o(idx)
-			elif item == "x":
-				self.put_x(idx)
-
-		imgui.end()
-
+	#do not forget to delete the textures, but it not neccesery this time
 
 if __name__ == "__main__":
 	tw= Gui_Window()
