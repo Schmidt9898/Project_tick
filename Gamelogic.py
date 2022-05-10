@@ -33,7 +33,7 @@ class Tictactoe():
 					self.turn[0]=True
 			#else:
 				#print(mark_," can't step")
-			self.check_is_win()
+		self.check_is_win()
 
 	def check_is_win(self):
 		#check rows
@@ -72,6 +72,10 @@ class Tictactoe():
 		if diagonal_row2.count("o")==3:
 			self.is_end = True
 			self.who_won = 1
+
+		if self.is_end:
+			self.turn = [False,False]
+
 
 
 	def get_state(self):
