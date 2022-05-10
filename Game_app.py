@@ -12,7 +12,7 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	#imgui.dummy(sx,sy)
 	bx,by=x-sx/2,y-sy/2
 	rx,ry=x+sx/2,y+sy/2
-	
+
 	draw_list = imgui.get_window_draw_list()
 	draw_list.add_rect_filled(bx,by, rx,ry, imgui.get_color_u32_rgba(0.1,0.2,0.8,1))
 	draw_list.add_text(x,y, imgui.get_color_u32_rgba(1,1,0,1), label)
@@ -20,7 +20,7 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 		draw_list.add_rect_filled(bx,by, rx,ry, imgui.get_color_u32_rgba(0.2,0.5,1,1))
 		draw_list.add_text(x,y, imgui.get_color_u32_rgba(1,1,0,1), label)
 		return True
-	
+
 	#print(nx)
 
 def is_over(min,max,pos):
@@ -54,10 +54,11 @@ class Game(Gui_Window):
 
 
 		self.vs = WebcamVideoStream().start()
-		self.hands = handsDetector()
+		self.hands = handsDetector(2)
 		self.prevHandState = ""
 
-		
+		self.aiplayer = True
+
 		self.net=Tic_net_client()
 		self.net.Start()
 
@@ -90,7 +91,7 @@ class Game(Gui_Window):
 	def context(self):
 
 		io = imgui.get_io()
-		
+
 
 		frame = self.vs.read()		#get frame
 		frame = cv2.flip(frame, 1)  # mirror the image
@@ -103,23 +104,23 @@ class Game(Gui_Window):
 		imgui.begin("background",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE | imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 		imgui.image(self.image_texture, w, h) ## TODO different size
 		imgui.end()
-		#self.cursorPosition=self.hands.cursorPosition # for graphics only 
+		#self.cursorPosition=self.hands.cursorPosition # for graphics only
 		self.cursorPosition = self.hands.cursorPosition
-		
+
 		#get click event
-		self.isClicked=False
-		if(self.prevHandState == "Closed" and self.hands.state == "Open"): # something feels off
+		self.isClicked=None
+		if(self.hands.holdStatus == 2): # something feels off
 			self.isClicked=True
 		self.prevHandState = self.hands.state
-			
-		
+
+
 
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
 		imgui.set_next_window_size(self.width, self.height)
 		imgui.push_style_color(imgui.COLOR_WINDOW_BACKGROUND, 	0	, 0	, 0,0)
 		imgui.begin("Main",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE )
 		draw_list=imgui.get_window_draw_list()
-		
+
 		if self.page_id==0:
 			self.Draw_menu()
 		elif self.page_id==1:
@@ -146,7 +147,7 @@ class Game(Gui_Window):
 				self.last_hoverred_selectable=id
 				if self.isClicked:
 					print("i selected",id)
-					
+
 		#imgui.selectable("Not Selected", False)
 		imgui.listbox_footer()
 
@@ -157,27 +158,33 @@ class Game(Gui_Window):
 		if self.isClicked:
 			squareNumber = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
 			self.game_logic.step(self.playerNumber,squareNumber)# this is not how this work but okay
+
+		if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
+			self.game_logic.ai_player_move()
+
 		self.drawGrid()
 		u_h=h/3
 		u_w=w/3
 		draw_list=imgui.get_window_draw_list()
 		#draw_list.add_circle_filled(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1))
 		for p,item in enumerate(self.game_logic.get_state()):
-	
+
 			if item == "o":
 				draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
 			elif item == "x":
 				Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
-			
+
 			#draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
 			#Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
 
+		if  self.game_logic.is_win is not None:
+			print("won player", self.game_logic.is_win)
 		#p = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
 		#print("y",int(p/3)*(u_h),"x",int(p%3)*(u_w))
 		pass
 	def Draw_test(self):
 		pass
-	
+
 
 	def start_loop(self):
 		try:
@@ -192,7 +199,3 @@ class Game(Gui_Window):
 			glfw.terminate()
 			self.vs.stop()
 			cv2.destroyAllWindows()
-
-
-
-

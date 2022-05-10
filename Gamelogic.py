@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class Tictactoe():
 	def __init__(self):
@@ -21,6 +22,7 @@ class Tictactoe():
 		self.mark = (self.mark+1) % 2
 		return True
 
+	@property
 	def is_win(self):
 		#test X
 		##if len(self.o)<3 or len(self.x)<3:
@@ -47,7 +49,6 @@ class Tictactoe():
 
 
 
-
 	def get_state(self):
 		state=[" "]*9
 		mark=0
@@ -56,6 +57,13 @@ class Tictactoe():
 				state[i]="x" if mark==0 else "o"
 			mark=1
 		return state
+
+	def ai_player_move(self):
+		matrix = np.reshape(self.get_state(), (3, 3))
+		while self.step(1,random.randint(0, 8)):
+			pass
+
+
 
 
 def print3(s):
@@ -90,8 +98,8 @@ if __name__ == "__main__":
 		g.step(1,step)
 		#g.stepo(step)
 		print3(g.get_state())
-		if g.check_is_win() is not None:
-			print("winner is ",g.is_win())
+		if g.is_win is not None:
+			print("winner is ",g.is_win)
 			break
 
 
