@@ -65,7 +65,7 @@ class Tictactoe():
 			self.is_end = True
 			self.who_won = 1
 
-		diagonal_row2 = [matrix[0][2],matrix[1][1],matrix[0][2]]
+		diagonal_row2 = [matrix[0][2],matrix[1][1],matrix[2][0]]
 		if diagonal_row2.count("x")==3:
 				self.is_end = True
 				self.who_won = 0

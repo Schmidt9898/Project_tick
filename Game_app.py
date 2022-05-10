@@ -44,7 +44,7 @@ class Game(Gui_Window):
 
 
 		self.vs = WebcamVideoStream().start()
-		self.hands = handsDetector()
+		self.hands = handsDetector(2)
 		self.prevHandState = ""
 
 		self.aiplayer = True
@@ -94,8 +94,8 @@ class Game(Gui_Window):
 		self.cursorPosition = self.hands.cursorPosition
 
 		#get click event
-		self.isClicked=False
-		if(self.prevHandState == "Closed" and self.hands.state == "Open"): # something feels off
+		self.isClicked=None
+		if(self.hands.holdStatus == 2): # something feels off
 			self.isClicked=True
 		self.prevHandState = self.hands.state
 
