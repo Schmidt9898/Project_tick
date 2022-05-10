@@ -18,8 +18,8 @@ class Game(Gui_Window):
 		self.frame = np.zeros((h,w,3), np.uint8)
 		self.width = w
 		self.height = h
-		#self.xgrids = xgrids
-		#self.ygrids = ygrids
+		self.xgrids = 3
+		self.ygrids = 3
 
 		self.game_logic=Tictactoe()
 		self.playerNumber = 0
@@ -94,7 +94,7 @@ class Game(Gui_Window):
 		frame = cv2.flip(frame, 1)  # mirror the image
 		self.hands.getHandAction(frame)
 		self.image_texture,w,h = mat_2_tex(frame,self.image_texture)
-		
+
 		if(self.prevHandState == "Closed" and self.hands.state == "Open"):
 			self.putCursor = True
 			self.cursorPosition = self.hands.cursorPosition
@@ -122,7 +122,7 @@ class Game(Gui_Window):
 				self.put_x(idx)
 
 		imgui.end()
-	
+
 
 	def start_loop(self):
 		try:
