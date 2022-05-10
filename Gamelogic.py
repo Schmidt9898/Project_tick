@@ -90,7 +90,7 @@ if __name__ == "__main__":
 		g.step(1,step)
 		#g.stepo(step)
 		print3(g.get_state())
-		if g.is_win() is not None:
+		if g.check_is_win() is not None:
 			print("winner is ",g.is_win())
 			break
 
