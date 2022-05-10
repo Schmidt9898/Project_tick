@@ -5,6 +5,7 @@ from Gui import *
 import cv2
 import traceback
 import imgui
+from server import Tic_net_client
 
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
@@ -22,6 +23,13 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 
 	#print(nx)
 
+def is_over(min,max,pos):
+	minx,miny=min
+	maxx,maxy=max
+	px,py=pos
+	return minx<px and px<maxx and miny<py and py<maxy
+
+
 
 class Game(Gui_Window):
 	def __init__(self, w, h,title="None"):
@@ -30,6 +38,8 @@ class Game(Gui_Window):
 		self.page_id=0 #0 menu 1 game 2 etc..
 
 		self.image_texture =None
+
+		self.last_hoverred_selectable=0
 
 		self.isClicked = False
 		self.cursorPosition = [0, 0]
@@ -48,6 +58,10 @@ class Game(Gui_Window):
 		self.prevHandState = ""
 
 		self.aiplayer = True
+
+		self.net=Tic_net_client()
+		self.net.Start()
+
 
 
 	def set_frame(self, frame):
@@ -124,6 +138,19 @@ class Game(Gui_Window):
 			print("most")
 			self.page_id=1
 
+
+		imgui.listbox_header("List", 200, 300)
+		for id,p in self.net.clients_avil.items():
+			imgui.selectable(p, id==self.last_hoverred_selectable)
+			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.cursorPosition):
+				#imgui.core.get_item_rect_max()
+				self.last_hoverred_selectable=id
+				if self.isClicked:
+					print("i selected",id)
+
+		#imgui.selectable("Not Selected", False)
+		imgui.listbox_footer()
+
 		pass
 	def Draw_game(self):
 		w,h=self.width,self.height
@@ -132,7 +159,7 @@ class Game(Gui_Window):
 			squareNumber = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
 			self.game_logic.step(self.playerNumber,squareNumber)# this is not how this work but okay
 
-		if self.aiplayer and self.game_logic.turn[1]==True:
+		if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
 			self.game_logic.ai_player_move()
 
 		self.drawGrid()
@@ -150,8 +177,8 @@ class Game(Gui_Window):
 			#draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
 			#Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
 
-		if  self.game_logic.is_end is True:
-			print("won player", self.game_logic.who_won)
+		if  self.game_logic.is_win is not None:
+			print("won player", self.game_logic.is_win)
 		#p = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
 		#print("y",int(p/3)*(u_h),"x",int(p%3)*(u_w))
 		pass
