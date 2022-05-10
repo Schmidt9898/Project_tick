@@ -29,6 +29,8 @@ class Game(Gui_Window):
 		self.hands = handsDetector()
 		self.prevHandState = ""
 
+		self.aiplayer = True
+
 
 
 	def set_frame(self, frame):
@@ -115,12 +117,18 @@ class Game(Gui_Window):
 			self.game_logic.step(self.playerNumber,squareNumber)
 			self.putCursor = False
 
+		if self.aiplayer and self.game_logic.turn[1]==True:
+			self.game_logic.ai_player_move()
+
 		for idx,item in enumerate(self.game_logic.get_state()):
 			if item == "o":
 				self.put_o(idx)
 			elif item == "x":
 				self.put_x(idx)
 
+		if  self.game_logic.is_end is True:
+			print("won player", self.game_logic.who_won)
+			self.game_logic.turn = [False,False]
 		imgui.end()
 
 

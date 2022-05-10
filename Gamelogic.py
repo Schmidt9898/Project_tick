@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class Tictactoe():
 	def __init__(self):
@@ -7,55 +8,133 @@ class Tictactoe():
 		#self.x=[]
 		#self.board_time=[0,0,0,0,0,0,0,0,0] #3x3
 		self.mark=0# 0x 1 o
+		self.turn=[True,False]
+		self.is_end = False
+		self.who_won = None
 
 	def step(self,mark_,i):
-		if self.mark != mark_:
-			print(mark_," can't step")
-			return False
-		if i in self.marks[0] or i in self.marks[1]:
-			print(i," is taken.")
-			return False
-		if len(self.marks[mark_])>2:
-			self.marks[mark_].pop(0)
-		self.marks[mark_].append(i)
-		self.mark = (self.mark+1) % 2
-		return True
+		if self.is_end is False:
+			if self.turn[mark_]:
+				if self.mark != mark_:
+					#print(mark_," can't step")
+					return
+				if i in self.marks[0] or i in self.marks[1]:
+					#print(i," is taken.")
+					return
+				if len(self.marks[mark_])>2:
+					self.marks[mark_].pop(0)
+				self.marks[mark_].append(i)
+				self.mark = (self.mark+1) % 2
+				if mark_==0:
+					self.turn[1]=True
+					self.turn[0]=False
+				else:
+					self.turn[1]=False
+					self.turn[0]=True
+			#else:
+				#print(mark_," can't step")
+			self.check_is_win()
 
-	def is_win(self):
-		#test X
-		##if len(self.o)<3 or len(self.x)<3:
-		##	return None
+	def check_is_win(self):
+		#check rows
+		matrix = self.get_matrix_state()
+		for row in matrix:
+			if row.count("x")==3:
+				self.is_end = True
+				self.who_won = 0
+			if row.count("o")==3:
+				self.is_end = True
+				self.who_won = 1
+		#check cols
+		for i in range(3):
+			col = []
+			for j in range(3):
+				col.append(matrix[j][i])
+			if col.count("x")==3:
+				self.is_end = True
+				self.who_won = 0
+			if col.count("o")==3:
+				self.is_end = True
+				self.who_won = 1
 
-		for m in range(2):
-			if len(self.marks[m])<3:
-				continue
-			o= self.marks[m].copy()
-			o.sort()
-			i = o[0]
-			#check horizontal
-			if i+1 == o[1] and i+2 == o[2]:
-				return m
-			#check vertical
-			if i+3 == o[1] and i+6 == o[2]:
-				return m
-			#check diagonal
-			if o==[0,4,8]:
-				return m
-			if o==[2,4,6]:
-				return m
-		return None
+		diagonal_row1 = [matrix[0][0],matrix[1][1],matrix[2][2]]
+		if diagonal_row1.count("x")==3:
+				self.is_end = True
+				self.who_won = 0
+		if diagonal_row1.count("o")==3:
+			self.is_end = True
+			self.who_won = 1
 
-
+		diagonal_row2 = [matrix[0][2],matrix[1][1],matrix[0][2]]
+		if diagonal_row2.count("x")==3:
+				self.is_end = True
+				self.who_won = 0
+		if diagonal_row2.count("o")==3:
+			self.is_end = True
+			self.who_won = 1
 
 
 	def get_state(self):
 		state=[" "]*9
 		mark=0
-		for m in self.marks:
-			for i in m:
-				state[i]="x" if mark==0 else "o"
-			mark=1
+		for player in range(len(self.marks)):
+			for i in self.marks[player]:
+				if player == 0:
+					state[i]="x"
+				else:
+					state[i]="o"
 		return state
+
+	def get_matrix_state(self):
+		matrix = []
+		for i in range(3):
+			row = []
+			for j in range(3):
+				mark_in=0
+				for player in range(len(self.marks)):
+					if i*3+j in self.marks[player]:
+						if player == 0:
+							row.append("x")
+							mark_in=1
+						else:
+							row.append("o")
+							mark_in=1
+				if not mark_in:
+					row.append(" ")
+			matrix.append(row)
+		return matrix
+
+	def ai_player_move(self):
+		matrix = self.get_matrix_state()
+		#print(matrix)
+		#first if there is 3 empty spaces
+		for i in range(len(matrix)):
+			empty_spaces = matrix[i].count(" ")
+			if empty_spaces == 3:
+				self.step(1,3*i+random.randint(0, 2))
+				return
+		#first if there is 2 empty spaces
+		for i in range(len(matrix)):
+			empty_spaces = matrix[i].count(" ")
+			if empty_spaces == 2:
+				for j in range(3):
+					rand_number = random.randint(0, 2)
+					if matrix[i][rand_number] == " ":
+						self.step(1,3*i+rand_number)
+						return
+
+		#first if there is 2 empty spaces
+		for i in range(len(matrix)):
+			empty_spaces = matrix[i].count(" ")
+			if empty_spaces == 1:
+				for j in range(3):
+					rand_number = random.randint(0, 1)
+					if matrix[i][rand_number] == " ":
+						self.step(1,3*i+rand_number)
+						return
+
+
+
 
 
 def print3(s):
