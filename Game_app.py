@@ -60,6 +60,7 @@ class Game(Gui_Window):
 		self.aiplayer = True
 
 		self.net=Tic_net_client()
+		#self.net.name = from_file / no name()
 		self.net.Start()
 
 
@@ -128,13 +129,15 @@ class Game(Gui_Window):
 		else:
 			pass
 
-		draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
-
+		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
+			draw_list.add_circle_filled(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
+		else:
+			draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
 		imgui.end()
 		imgui.pop_style_color(1)
 
 	def Draw_menu(self):
-		if hand_button("alma",self.width/2,200,200,100,self.cursorPosition) and self.isClicked:
+		if hand_button("alma",self.width/2,200,200,100,self.hands.holdedPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
 
@@ -142,7 +145,7 @@ class Game(Gui_Window):
 		imgui.listbox_header("List", 200, 300)
 		for id,p in self.net.clients_avil.items():
 			imgui.selectable(p, id==self.last_hoverred_selectable)
-			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.cursorPosition):
+			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.hands.holdedPosition):
 				#imgui.core.get_item_rect_max()
 				self.last_hoverred_selectable=id
 				if self.isClicked:
@@ -156,7 +159,8 @@ class Game(Gui_Window):
 		w,h=self.width,self.height
 
 		if self.isClicked:
-			squareNumber = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
+			print("aca")
+			squareNumber = int(self.hands.holdedPosition[1]/h*3)*3+int(self.hands.holdedPosition[0]/w*3)
 			self.game_logic.step(self.playerNumber,squareNumber)# this is not how this work but okay
 
 		if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
