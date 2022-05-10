@@ -36,7 +36,7 @@ class Tic_net_server():
 				sent = self.server.sendto(data, self.multicast_group)
 			except:
 				#print ("Ping...")
-				sent = self.server.sendto(b"{\"src\": 0, \"dest\": 0,\"type\":\"PING\"}", self.multicast_group)
+				sent = self.server.sendto(b"{\"src\": 0, \"dest\": 0,\"type\":\"WHO\"}", self.multicast_group)
 
 	#time.sleep(1)
 
@@ -144,7 +144,7 @@ class Tic_net_client():
 		self.receiver_thread = threading.Thread(target=self.receiver_loop)
 		self.receiver_thread.setDaemon(True)
 		self.receiver_thread.start()
-		tn.send({"data":"init"})
+		self.send({"data":"init"})
 
 
 

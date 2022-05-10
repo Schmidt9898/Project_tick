@@ -5,6 +5,7 @@ from Gui import *
 import cv2
 import traceback
 import imgui
+from server import Tic_net_client
 
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
@@ -22,6 +23,13 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	
 	#print(nx)
 
+def is_over(min,max,pos):
+	minx,miny=min
+	maxx,maxy=max
+	px,py=pos
+	return minx<px and px<maxx and miny<py and py<maxy
+
+
 
 class Game(Gui_Window):
 	def __init__(self, w, h,title="None"):
@@ -30,6 +38,8 @@ class Game(Gui_Window):
 		self.page_id=0 #0 menu 1 game 2 etc..
 
 		self.image_texture =None
+
+		self.last_hoverred_selectable=0
 
 		self.isClicked = False
 		self.cursorPosition = [0, 0]
@@ -46,6 +56,10 @@ class Game(Gui_Window):
 		self.vs = WebcamVideoStream().start()
 		self.hands = handsDetector()
 		self.prevHandState = ""
+
+		
+		self.net=Tic_net_client()
+		self.net.Start()
 
 
 
@@ -122,6 +136,19 @@ class Game(Gui_Window):
 		if hand_button("alma",self.width/2,200,200,100,self.cursorPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
+
+
+		imgui.listbox_header("List", 200, 300)
+		for id,p in self.net.clients_avil.items():
+			imgui.selectable(p, id==self.last_hoverred_selectable)
+			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.cursorPosition):
+				#imgui.core.get_item_rect_max()
+				self.last_hoverred_selectable=id
+				if self.isClicked:
+					print("i selected",id)
+					
+		#imgui.selectable("Not Selected", False)
+		imgui.listbox_footer()
 
 		pass
 	def Draw_game(self):

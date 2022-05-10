@@ -6,7 +6,7 @@ print("receiver")
 
 tn=Tic_net_client()
 tn.Start()
-tn.send({"data":"helo"})
+#tn.send({"data":"helo"})
 while True:
 	s=input()
 	if s == "get":
