@@ -25,6 +25,7 @@ class handsDetector:
         self.holdTime= hold_time
         self.cursorPosition = [0,0]
         self.boardPosition = 0
+        self.holdedPosition = [0,0]
         self.closedTime = datetime.datetime
         #0 no hold - 1 hold  - 2 hold-press - 3 hold-pressed
         self.holdStatus = 0
@@ -36,6 +37,14 @@ class handsDetector:
         # Draw the hand annotations on the image.
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                tTip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+                tTip = [tTip.x*self.width, tTip.y*self.height]
+
+                self.cursorPosition = tTip
+
         if results.multi_hand_world_landmarks:
           for hand_landmarks in results.multi_hand_world_landmarks:
                 tTip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
@@ -50,10 +59,11 @@ class handsDetector:
                     if self.state != "Closed":
                         self.stateCount += 1
 
-                        if self.stateCount == 10:
+                        if self.stateCount == 20:
                              self.state = "Closed"
                              self.closedTime = datetime.datetime.now()
                              self.stateCount = 0
+                             self.holdedPosition = self.cursorPosition
                 else:
                     if self.state != "Open":
                         self.stateCount += 1
@@ -68,18 +78,13 @@ class handsDetector:
                         self.holdStatus = 1
                     elif timeclosed > self.holdTime and self.holdStatus == 1:
                         self.holdStatus = 2
-                    else:
+                    elif timeclosed > self.holdTime and self.holdStatus == 2:
                         self.holdStatus = 3
                 else:
                     self.holdStatus = 0
 
 
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                tTip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                tTip = [tTip.x*self.width, tTip.y*self.height]
 
-                self.cursorPosition = tTip
 
     def getBoardPosition(self):
-        return [self.cursorPosition/self.width, self.cursorPosition/self.height]
+        return [self.cursorPosition[0]/self.width, self.cursorPosition[1]/self.height]
