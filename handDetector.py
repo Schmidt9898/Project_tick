@@ -14,11 +14,32 @@ mp_hands = mp.solutions.hands
 
 
 def distance(a,b):
+    """Calculate euclidian distance beetween two points.
+
+    :param a: First point.
+    :type name: float.
+    :param state: Second Point.
+    :type state: float.
+    :returns:  float -- the distance beetween a and b.
+
+    """
     return math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2)
 
 
 class handsDetector:
+    """Class to handle the finger action.
+
+    .. note::
+
+       This class needs the MediaPipe Hands library.
+
+    """
     def __init__(self, hold_time = 1.5):
+        """Constructor of handsDetectorClass.
+
+        :param a: time to wait for click action.
+        :type name: float.
+        """
         self.hands = mp_hands.Hands(
             model_complexity=0,
             min_detection_confidence=0.5,
@@ -36,7 +57,14 @@ class handsDetector:
 
 
     def getHandAction(self, frame):
-        
+        """Gets the action of the hand.
+        It process the movement of the fingers and detects
+        if the index finger tip is holded for a while
+
+        :param a: frame.
+        :type name: mat image.
+
+        """
         if self.isAction:
             #print("clear time")
             self.start_time=time.time()
@@ -62,7 +90,7 @@ class handsDetector:
                         #print("is this true")
                         self.isAction=True
                     pass
-                    
+
                 else:
                     self.startPosition=self.cursorPosition
                     self.start_time=time.time()
@@ -76,6 +104,13 @@ class handsDetector:
 
 
     def getBoardPosition(self):
+        """Get the board position of the index finger tip.
+        It process the movement of the fingers and detects
+        if the index finger tip is holded for a while
+
+        :returns:  list -- x,y coordinates of the board
+
+        """
         return [self.cursorPosition[0]/self.width, self.cursorPosition[1]/self.height]
 
 

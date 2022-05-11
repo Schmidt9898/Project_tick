@@ -35,7 +35,25 @@ def impl_glfw_init(w,h,window_name = "Test title"):
 	return window
 
 class Gui_Window:
+	"""Standar Class for Gui_Window.
+
+	.. note::
+
+	   This function can be used as a help to implement a Gui_windows,
+       it shows every feature in the GUI
+
+	"""
 	def __init__(self,w=640,h=480,title="None was given"):
+		"""Constructor of Game.
+
+		It starts game UI, camera and tictactoe logic
+		:param w: width of the gui
+		:type name: int
+  		:param h: height of the gui
+		:type name: int
+  		:param title: title of the GUI
+		:type name: str
+		"""
 		imgui.create_context()
 		self.window = impl_glfw_init(w,h,title)
 		self.impl = GlfwRenderer(self.window)
@@ -44,14 +62,20 @@ class Gui_Window:
 		self.impl.refresh_font_texture()
 
 	def context(self):
+		"""It show the context to be show on render_frame
+		"""
 		imgui.show_test_window()
 
 	def terminate(self):
+		"""Terminates the process of the GUI
+		"""
 		self.impl.shutdown()
 		glfw.terminate()
 
 
 	def render_frame(self):
+			"""Render the actual frame processed by context
+			"""
 			glfw.poll_events()
 			self.impl.process_inputs()
 			imgui.new_frame()
@@ -72,6 +96,8 @@ class Gui_Window:
 			glfw.swap_buffers(self.window)
 
 	def start_loop(self):
+		"""Main loop of the game GUI, it calls every time to render_frame untill the gui_windows finishes
+		"""
 		while not glfw.window_should_close(self.window):
 			self.render_frame()
 
@@ -82,6 +108,10 @@ class Gui_Window:
 
 # load image to vram texture
 def mat_2_tex(mat,texture=None):
+	"""Transform a opencv mat into a gl texture
+
+ 	:returns:  texture,w,h -- texture and dimensions of the texture
+	"""
 	h,w,_=mat.shape
 	#cv.imshow("mat_2_tex",mat)
 	if texture is None:
