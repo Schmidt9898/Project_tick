@@ -8,6 +8,8 @@ import traceback
 import imgui
 from ticlient import Tic_net_client
 import datetime
+import configparser
+import os
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	#imgui.dummy(sx,sy)
@@ -66,9 +68,18 @@ class Game(Gui_Window):
 		self.aiplayer = True
 
 		self.net=Tic_net_client()
-		#self.net.name = from_file / no name()
-		self.net.Start()
+		parser = configparser.ConfigParser()
+		if not os.path.exists('game.cfg') :
+			parser['Player'] = {'name': 'Mario'}
+			parser.write(open('game.cfg', 'w'))
 
+		parser.read("game.cfg")
+		try:
+			self.name = parser.get('Player', 'name')
+		except:
+			print("no [Player] or name in game.cfg")
+
+		self.net.Start()
 		self.next_player_list_update_t=time.time()+2;
 
 
