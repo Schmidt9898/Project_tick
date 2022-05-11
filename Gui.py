@@ -113,7 +113,6 @@ def mat_2_tex(mat,texture=None):
  	:returns:  texture,w,h -- texture and dimensions of the texture
 	"""
 	h,w,_=mat.shape
-	#cv.imshow("mat_2_tex",mat)
 	if texture is None:
 		texture = gl.glGenTextures(1)
 	gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1);
@@ -125,7 +124,6 @@ def mat_2_tex(mat,texture=None):
 	else:
 		gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, w, h, 0, gl.GL_BGR,gl.GL_UNSIGNED_BYTE, mat)
 	return texture, w, h
-	#do not forget to delete the textures, but it not neccesery this time
 
 if __name__ == "__main__":
 	tw= Gui_Window()

@@ -17,9 +17,6 @@ class Tictactoe():
         and create the last movement variable self.mark
         """
         self.marks=[[],[]]
-        #self.o=[]
-        #self.x=[]
-        #self.board_time=[0,0,0,0,0,0,0,0,0] #3x3
         self.mark=0# 0x 1 o
 
     def step(self,mark_,i):
@@ -99,8 +96,6 @@ class Tictactoe():
 
         """
         board  = self.get_state()
-        # while self.step(1,random.randint(0, 8)):
-        # 	pass
         possibleMoves = [x for x, symbol in enumerate(board) if symbol == ' ']
         #check if there is any winning move for ai after player to block
         for symbol in ["o","x"]:
@@ -154,23 +149,6 @@ def print3(s):
 
 if __name__ == "__main__":
     g=Tictactoe()
-    #g.stepx(2)
-    #g.stepx(2)
-    #g.stepo(1)
-    #g.stepo(1)
-#
-    #g.stepx(2)
-    #g.stepx(5)
-    #g.stepo(4)
-#
-    #print3(g.get_state())
-    #print("-"*30)
-    #g.stepx(0)
-    #g.stepo(3)
-    #print3(g.get_state())
-    #g.stepx(8)
-    #g.stepo(7)
-    #
 
     while True:
         step=int(input())

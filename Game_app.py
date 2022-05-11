@@ -15,7 +15,7 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	"""It displays a rectangle button that can change the color when the cursor is inside
         :returns:  bool --  If the cursor is inside of the rectangle
         """
-	#imgui.dummy(sx,sy)
+
 	bx,by=x-sx/2,y-sy/2
 	rx,ry=x+sx/2,y+sy/2
 
@@ -27,7 +27,7 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 		draw_list.add_text(x-100,y, imgui.get_color_u32_rgba(1,1,0,1), label)
 		return True
 
-	#print(nx)
+
 
 def is_over(min,max,pos):
 	"""Check if the pos coordinates is inside min and max coordinates
@@ -110,7 +110,7 @@ class Game(Gui_Window):
 		self.next_player_list_update_t=time.time()+2;
 
 		self.Label_message="Challenging..."
-		self.opponent=("server",0) # 0 is no one
+		self.opponent=("server",0)
 		self.mark=None
 
 	def set_frame(self, frame):
@@ -166,7 +166,7 @@ class Game(Gui_Window):
 		"""
 		msgs=self.net.get_messages()
 		for m in msgs:
-			print(m)					# TODO remove False
+
 			if m["dest"] != self.net.id and False: # scip if its not sent to us
 				continue
 			if m["data"] == "CHALLENGE":
@@ -174,7 +174,6 @@ class Game(Gui_Window):
 					self.opponent=("todo name",m["src"])
 					self.page_id=4
 			if m["data"] == "CANCEL" and m["src"]==self.opponent[1]:
-				#if self.page_id == 4:
 				self.opponent=("none",0)
 				self.page_id=0
 			if m["data"] == "ACCEPT" and m["src"]==self.opponent[1]:
@@ -209,7 +208,7 @@ class Game(Gui_Window):
 		imgui.begin("background",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE | imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 		imgui.image(self.image_texture, w, h) ## TODO different size
 		imgui.end()
-		#self.cursorPosition=self.hands.cursorPosition # for graphics only
+
 		self.cursorPosition = self.hands.cursorPosition
 
 		#get click event
@@ -234,26 +233,10 @@ class Game(Gui_Window):
 			self.Draw_accepting_page()
 		else:
 			pass
-		#print("Position",self.hands.cursorPosition)
+
 		draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
 		draw_list.add_circle(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 14+15*(1-self.hands.progres), imgui.get_color_u32_rgba(0.9,0.9,0.8,1)) # cursore draw
-		#if self.hands.holdStatus == 0:
-		#	circle_color = imgui.get_color_u32_rgba(0.1,0.7,0.8,1)
-		#else:
-		#	circle_color = imgui.get_color_u32_rgba(0.8,0.7,0.1,1)
-#
-		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-		#	draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, circle_color) # cursore draw
-		#else:
-		#	draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, circle_color) # cursore draw
-#
-#
-		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-		#	time_delta = (datetime.datetime.now() - self.hands.closedTime).total_seconds()
-		#	if time_delta != 0 :
-		#		time_prop = (self.hands.holdTime/(time_delta))
-		#		if time_prop > 5:
-		#			time_prop = 5
+
 		imgui.end()
 		imgui.pop_style_color(1)
 		imgui.pop_font()
@@ -269,7 +252,6 @@ class Game(Gui_Window):
 
 
 		if hand_button("Play against BOB the BOT",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
-			print("most")
 			self.page_id=1
 
 		imgui.dummy(100,30)
@@ -283,7 +265,6 @@ class Game(Gui_Window):
 			p,ttl=user
 			imgui.selectable(str(id)+". "+p , id==self.last_hoverred_selectable)
 			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.hands.cursorPosition):
-				#imgui.core.get_item_rect_max()
 				self.last_hoverred_selectable=id
 				if self.isClicked:
 					self.opponent=(p,id)
@@ -293,7 +274,6 @@ class Game(Gui_Window):
 					self.net.send(data,id)
 					#print("i selected",id)
 
-		#imgui.selectable("Not Selected", False)
 		imgui.listbox_footer()
 		imgui.end_child()
 
@@ -316,7 +296,6 @@ class Game(Gui_Window):
 		u_h=h/3
 		u_w=w/3
 		draw_list=imgui.get_window_draw_list()
-		#draw_list.add_circle_filled(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1))
 		for p,item in enumerate(self.game_logic.get_state()):
 
 			if item == "o":
@@ -324,13 +303,9 @@ class Game(Gui_Window):
 			elif item == "x":
 				Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
 
-			#draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
-			#Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
-
 		if  self.game_logic.is_win is not None:
 			print("won player", self.game_logic.is_win)
-		#p = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
-		#print("y",int(p/3)*(u_h),"x",int(p%3)*(u_w))
+
 		pass
 	def Draw_challange_page(self):
 		"""Gui logic for challenge page
@@ -364,7 +339,6 @@ class Game(Gui_Window):
 		w,h=self.width,self.height
 
 		if self.isClicked:
-			#print("aca")
 			squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
 			data={"data":"STEP","to":squareNumber}
 			self.net.send(data,self.opponent[1])
@@ -396,8 +370,6 @@ class Game(Gui_Window):
 				self.render_frame()
 		except Exception as e:
 			print(str(e))
-    		#traceback.print_exc()
-			#print(sys.exc_info())
 		finally:
 			self.impl.shutdown()
 			glfw.terminate()
