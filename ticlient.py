@@ -1,62 +1,30 @@
-print("sender")
-
 import json
 import socket
 import threading
 import time
 import random
-import struct
-
-
-
-
-class Tic_net_server():
-	def __init__(self,port=12345):
-		self.multicast_group=("224.1.1.1",port)
-		self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.server.settimeout(1) ## message timeout
-		ttl = 2
-		self.server.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-		self.id_counter=1
-	
-	def Start(self):
-		sent = self.server.sendto(b"message", self.multicast_group)
-		print("sent= ", sent)
-		while True:
-			try:
-				data, address = self.server.recvfrom(1024)
-				msg = data.decode()
-				print (data)
-				if msg == "PONG":
-					continue
-				#	print ("add id")
-				#	sent = self.server.sendto(("your_id:"+str(self.id_counter)).encode(),self.multicast_group)
-				#	self.id_counter+=1
-				#else:
-				sent = self.server.sendto(data, self.multicast_group)
-			except:
-				#print ("Ping...")
-				sent = self.server.sendto(b"{\"src\": 0, \"dest\": 0,\"type\":\"WHO\"}", self.multicast_group)
-
-	#time.sleep(1)
 
 
 class Tic_net_client():
 	def __init__(self,port=12345):
-		self.multicast_group="224.1.1.1"
-		self.client= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.client.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+		self.port=port
+		#self.multicast_group="224.1.1.1"
+		self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
+		self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		# Enable broadcasting mode
+		self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
 		# Bind to the server address
 		self.client.bind(('',port))
+		self.client.settimeout(1.2)
 
 		# Tell the operating system to add the socket to the multicast group
 		# on all interfaces.
-		group = socket.inet_aton(self.multicast_group)
-		mreq = struct.pack('4sL', group, socket.INADDR_ANY)
-		self.client.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+		#group = socket.inet_aton(self.multicast_group)
+		#mreq = struct.pack('4sL', group, socket.INADDR_ANY)
+		#self.client.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
-		self.client.settimeout(1.2)
-		self.address=None
+		#self.address=None
 
 		self.name="Laci"
 		#in and outbox
@@ -66,10 +34,20 @@ class Tic_net_client():
 		self.stop=False
 		
 	def refresh_playes(self): # 200 milis
-		self.clients_avil={}
+		remove_id=[]
+		for id,user, in self.clients_avil.items():
+			p,ttl=user
+			ttl-=1
+			self.clients_avil[id]=(p,ttl)
+			if ttl<=0:
+				remove_id.append(id)
+		
+		for id in remove_id:
+			del self.clients_avil[id]
+
+		#self.clients_avil={}
 		self.send({"type":"WHO"})
 		time.sleep(0.1)
-		print("players",self.clients_avil)
 
 	
 
@@ -78,14 +56,14 @@ class Tic_net_client():
 		if "type" not in obj.keys():
 			obj["type"]="cmd"
 		#wait for server
-		while self.address is None:
-			print("waiting")
-			time.sleep(0.1)
-			pass
+		#while self.address is None:
+		#	print("waiting")
+		#	time.sleep(0.1)
+		#	pass
 		if self.id == 0:
 			data = {"src": self.id, "dest": 0,"type":"WHO"}
 			json_dump = json.dumps(data)
-			sent = self.client.sendto(json_dump.encode(), self.address)
+			sent = self.client.sendto(json_dump.encode(), ('<broadcast>',self.port))
 			time.sleep(0.1)
 			while True:
 				r=random.randrange(1,100)
@@ -99,7 +77,7 @@ class Tic_net_client():
 		data["dest"]=dest
 		json_dump = json.dumps(data)
 		#obj to json
-		sent = self.client.sendto(json_dump.encode(), self.address)
+		sent = self.client.sendto(json_dump.encode(),  ('<broadcast>',self.port))
 		pass
 	
 	def get_messages(self):
@@ -112,7 +90,8 @@ class Tic_net_client():
 		print("receiver started")
 		while not self.stop:
 			try:
-				data, self.address = self.client.recvfrom(1024)
+				data, address = self.client.recvfrom(1024)
+				#print(data)
 				msg=data.decode()
 				msg = json.loads(msg)
 				if msg["src"] == self.id:
@@ -126,8 +105,7 @@ class Tic_net_client():
 					#print("-----i am sending my id")
 					sent = self.send({"type":"IAM","id":self.id,"name":self.name})
 				if msg["type"]=="IAM":
-					self.clients_avil[msg["id"]]=msg["name"]
-					#if msg["id"] not in self.clients_avil.keys()
+					self.clients_avil[msg["id"]]=(msg["name"],3)
 				if msg["type"]=="cmd":
 					self.inbox.append(msg)
 
@@ -149,9 +127,25 @@ class Tic_net_client():
 
 
 if __name__ == "__main__":
-	tn=Tic_net_server()
-	tn.Start()
+	#tn=Tic_net_server()
+	#tn.Start()
 	
+	print("receiver")
+	tn=Tic_net_client()
+	tn.Start()
+	#tn.send({"data":"helo"})
+	while True:
+		s=input()
+		if s == "get":
+			tn.refresh_playes()
+			print(tn.clients_avil)
+		elif s == "in":
+			print(tn.get_messages())
+		else:
+			tn.send({"data":s})
+			print(tn.clients_avil)
+		#print(tn.get_new_id())
+		#time.sleep(1)
 
 
 #
