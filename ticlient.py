@@ -105,7 +105,7 @@ class Tic_net_client():
 					#print("-----i am sending my id")
 					sent = self.send({"type":"IAM","id":self.id,"name":self.name})
 				if msg["type"]=="IAM":
-					self.clients_avil[msg["id"]]=(msg["name"],3)
+					self.clients_avil[msg["id"]]=(msg["name"],2)
 				if msg["type"]=="cmd":
 					self.inbox.append(msg)
 

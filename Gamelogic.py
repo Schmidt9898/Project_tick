@@ -21,6 +21,11 @@ class Tictactoe():
 		self.marks[mark_].append(i)
 		self.mark = (self.mark+1) % 2
 		return True
+	
+	def reset(self):
+		self.marks=[[],[]]
+		self.mark=0# 0x 1 o
+		print("reset")
 
 	@property
 	def is_win(self):
