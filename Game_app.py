@@ -109,10 +109,10 @@ class Game(Gui_Window):
 		self.cursorPosition = self.hands.cursorPosition
 
 		#get click event
-		self.isClicked=None
-		if(self.hands.holdStatus == 2): # something feels off
-			self.isClicked=True
-		self.prevHandState = self.hands.state
+		self.isClicked=self.hands.isAction
+		#if(self.hands.holdStatus == 2): # something feels off
+		#	self.isClicked=True
+		#self.prevHandState = self.hands.state
 
 
 
@@ -129,29 +129,31 @@ class Game(Gui_Window):
 		else:
 			pass
 
-		if self.hands.holdStatus == 0:
-			circle_color = imgui.get_color_u32_rgba(0.1,0.7,0.8,1)
-		else:
-			circle_color = imgui.get_color_u32_rgba(0.8,0.7,0.1,1)
-
-		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-			draw_list.add_circle_filled(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15, circle_color) # cursore draw
-		else:
-			draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, circle_color) # cursore draw
-
-
-		if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-			time_delta = (datetime.datetime.now() - self.hands.closedTime).total_seconds()
-			if time_delta != 0 :
-				time_prop = (self.hands.holdTime/(time_delta))
-				if time_prop > 5:
-					time_prop = 5
-				draw_list.add_circle(self.hands.holdedPosition[0], self.hands.holdedPosition[1], 15*(time_prop), circle_color) # cursore draw
+		#print("Position",self.hands.cursorPosition)
+		draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
+		draw_list.add_circle(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 14+15*(1-self.hands.progres), imgui.get_color_u32_rgba(0.9,0.9,0.8,1)) # cursore draw
+		#if self.hands.holdStatus == 0:
+		#	circle_color = imgui.get_color_u32_rgba(0.1,0.7,0.8,1)
+		#else:
+		#	circle_color = imgui.get_color_u32_rgba(0.8,0.7,0.1,1)
+#
+		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
+		#	draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, circle_color) # cursore draw
+		#else:
+		#	draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, circle_color) # cursore draw
+#
+#
+		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
+		#	time_delta = (datetime.datetime.now() - self.hands.closedTime).total_seconds()
+		#	if time_delta != 0 :
+		#		time_prop = (self.hands.holdTime/(time_delta))
+		#		if time_prop > 5:
+		#			time_prop = 5
 		imgui.end()
 		imgui.pop_style_color(1)
 
 	def Draw_menu(self):
-		if hand_button("alma",self.width/2,200,200,100,self.hands.holdedPosition) and self.isClicked:
+		if hand_button("alma",self.width/2,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
 
@@ -159,7 +161,7 @@ class Game(Gui_Window):
 		imgui.listbox_header("List", 200, 300)
 		for id,p in self.net.clients_avil.items():
 			imgui.selectable(p, id==self.last_hoverred_selectable)
-			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.hands.holdedPosition):
+			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.hands.cursorPosition):
 				#imgui.core.get_item_rect_max()
 				self.last_hoverred_selectable=id
 				if self.isClicked:
@@ -174,7 +176,7 @@ class Game(Gui_Window):
 
 		if self.isClicked:
 			print("aca")
-			squareNumber = int(self.hands.holdedPosition[1]/h*3)*3+int(self.hands.holdedPosition[0]/w*3)
+			squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
 			self.game_logic.step(self.playerNumber,squareNumber)# this is not how this work but okay
 
 		if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
