@@ -18,7 +18,7 @@ def distance(a,b):
 
 
 class handsDetector:
-    def __init__(self, hold_time = 2.0):
+    def __init__(self, hold_time = 1.5):
         self.hands = mp_hands.Hands(
             model_complexity=0,
             min_detection_confidence=0.5,

@@ -34,10 +34,20 @@ class Tic_net_client():
 		self.stop=False
 		
 	def refresh_playes(self): # 200 milis
-		self.clients_avil={}
+		remove_id=[]
+		for id,user, in self.clients_avil.items():
+			p,ttl=user
+			ttl-=1
+			self.clients_avil[id]=(p,ttl)
+			if ttl<=0:
+				remove_id.append(id)
+		
+		for id in remove_id:
+			del self.clients_avil[id]
+
+		#self.clients_avil={}
 		self.send({"type":"WHO"})
 		time.sleep(0.1)
-		print("players",self.clients_avil)
 
 	
 
@@ -92,11 +102,10 @@ class Tic_net_client():
 
 				#print(msg)
 				if msg["type"] == "WHO":
-					print("-----i am sending my id")
+					#print("-----i am sending my id")
 					sent = self.send({"type":"IAM","id":self.id,"name":self.name})
 				if msg["type"]=="IAM":
-					self.clients_avil[msg["id"]]=msg["name"]
-					#if msg["id"] not in self.clients_avil.keys()
+					self.clients_avil[msg["id"]]=(msg["name"],3)
 				if msg["type"]=="cmd":
 					self.inbox.append(msg)
 
@@ -129,6 +138,7 @@ if __name__ == "__main__":
 		s=input()
 		if s == "get":
 			tn.refresh_playes()
+			print(tn.clients_avil)
 		elif s == "in":
 			print(tn.get_messages())
 		else:
