@@ -4,10 +4,9 @@ from cam import WebcamVideoStream
 from handDetector import handsDetector
 from Gui import *
 import cv2
-import traceback
 import imgui
 from ticlient import Tic_net_client
-import datetime
+import os
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 	#imgui.dummy(sx,sy)
@@ -71,7 +70,15 @@ class Game(Gui_Window):
 		self.aiplayer = True
 
 		self.net=Tic_net_client()
-		#self.net.name = from_file / no name()
+		if not os.path.exists("name.txt"):
+			f = open("name.txt", "w")
+			f.writelines(["no name"])
+			f.flush()
+			f.close()
+
+		f = open("name.txt", "r")
+		self.net.name = f.readline()
+		f.close()
 		self.net.Start()
 
 		self.next_player_list_update_t=time.time()+2;
@@ -79,11 +86,6 @@ class Game(Gui_Window):
 		self.Label_message="Challenging..."
 		self.opponent=("server",0) # 0 is no one
 		self.mark=None
-
-		
-
-
-
 
 
 
@@ -225,6 +227,7 @@ class Game(Gui_Window):
 		if hand_button("Play against BOB the BOT",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
+			self.game_logic.reset()
 
 		imgui.dummy(100,30)
 		imgui.same_line()
@@ -254,35 +257,40 @@ class Game(Gui_Window):
 		pass
 	def Draw_game(self):
 		w,h=self.width,self.height
+		if self.game_logic.is_win is None:
+			if self.isClicked:
+				squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
+				self.game_logic.step(0,squareNumber)# this is not how this work but okay
 
-		if self.isClicked:
-			print("aca")
-			squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
-			self.game_logic.step(self.playerNumber,squareNumber)# this is not how this work but okay
+			if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
+				self.game_logic.ai_player_move()
 
-		if self.aiplayer and self.game_logic.mark==1 and self.game_logic.is_win is None:
-			self.game_logic.ai_player_move()
+			self.drawGrid()
+			u_h=h/3
+			u_w=w/3
+			draw_list=imgui.get_window_draw_list()
+			#draw_list.add_circle_filled(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1))
+			for p,item in enumerate(self.game_logic.get_state()):
 
-		self.drawGrid()
-		u_h=h/3
-		u_w=w/3
-		draw_list=imgui.get_window_draw_list()
-		#draw_list.add_circle_filled(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1))
-		for p,item in enumerate(self.game_logic.get_state()):
+				if item == "o":
+					draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
+				elif item == "x":
+					Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
 
-			if item == "o":
-				draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
-			elif item == "x":
-				Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
+		else:
+			if 0==self.game_logic.is_win:
+				imgui.text("You won!")
+			else:
+				imgui.text("You losed to the Ai Bot :D")
+			if hand_button("OK",self.width/4*3,350,200,100,self.hands.cursorPosition) and self.isClicked:
+				#data={"data":"CANCEL"}
+				#self.net.send(data,self.opponent[1])
+				self.opponent=("server",0)
+				self.page_id=0
 
-			#draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
-			#Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
 
-		if  self.game_logic.is_win is not None:
-			print("won player", self.game_logic.is_win)
-		#p = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
-		#print("y",int(p/3)*(u_h),"x",int(p%3)*(u_w))
-		pass
+
+
 	def Draw_challange_page(self):
 		imgui.text("Challenging "+str(self.opponent[1])+". "+self.opponent[0] )
 		if hand_button("Cancel",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
@@ -303,28 +311,43 @@ class Game(Gui_Window):
 			self.opponent=("server",0)
 			self.page_id=0
 
+
+
+
 	def Draw_game_online(self):
 		w,h=self.width,self.height
+		if self.game_logic.is_win is None:
 
-		if self.isClicked:
-			#print("aca")
-			squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
-			data={"data":"STEP","to":squareNumber}
-			self.net.send(data,self.opponent[1])
-			self.game_logic.step(self.mark,squareNumber)
+			if self.isClicked:
+				#print("aca")
+				squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
+				data={"data":"STEP","to":squareNumber}
+				self.net.send(data,self.opponent[1])
+				self.game_logic.step(self.mark,squareNumber)
 
-		self.drawGrid()
-		u_h=h/3
-		u_w=w/3
-		draw_list=imgui.get_window_draw_list()
-		for p,item in enumerate(self.game_logic.get_state()):
-			if item == "o":
-				draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
-			elif item == "x":
-				Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
+			self.drawGrid()
+			u_h=h/3
+			u_w=w/3
+			draw_list=imgui.get_window_draw_list()
+			for p,item in enumerate(self.game_logic.get_state()):
+				if item == "o":
+					draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
+				elif item == "x":
+					Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
+
+		else:
+			if self.mark==self.game_logic.is_win:
+				imgui.text("You won!")
+			else:
+				imgui.text("You losed to "+str(self.opponent[1])+". "+self.opponent[0] )
+			if hand_button("OK",self.width/4*3,350,200,100,self.hands.cursorPosition) and self.isClicked:
+				#data={"data":"CANCEL"}
+				#self.net.send(data,self.opponent[1])
+				self.opponent=("server",0)
+				self.page_id=0
 
 
-		if  self.game_logic.is_win is not None:
+
 			print("won player", self.game_logic.is_win)
 
 	def Draw_test(self):
