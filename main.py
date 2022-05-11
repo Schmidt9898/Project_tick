@@ -3,6 +3,7 @@ from handDetector import handsDetector
 import cv2
 from Game_app import Game
 
-tw = Game(640, 480,"Tick tack toe")
-tw.start_loop()
+if __name__ == "__main__":
+    tw = Game(640, 480,"Tick tack toe")
+    tw.start_loop()
 

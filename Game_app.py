@@ -6,10 +6,15 @@ from Gui import *
 import cv2
 import imgui
 from ticlient import Tic_net_client
+import datetime
+import configparser
 import os
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):
-	#imgui.dummy(sx,sy)
+	"""It displays a rectangle button that can change the color when the cursor is inside
+        :returns:  bool --  If the cursor is inside of the rectangle
+        """
+
 	bx,by=x-sx/2,y-sy/2
 	rx,ry=x+sx/2,y+sy/2
 
@@ -21,9 +26,12 @@ def hand_button(label,x,y,sx,sy,cursore=(0,0)):
 		draw_list.add_text(x-100,y, imgui.get_color_u32_rgba(1,1,0,1), label)
 		return True
 
-	#print(nx)
+
 
 def is_over(min,max,pos):
+	"""Check if the pos coordinates is inside min and max coordinates
+	    :returns:  bool --  if the pos is inside the rectangle
+	    """
 	minx,miny=min
 	maxx,maxy=max
 	px,py=pos
@@ -32,7 +40,23 @@ def is_over(min,max,pos):
 
 
 class Game(Gui_Window):
+	"""Class for the game.
+
+	.. note::
+	   This function contains all the game gui logic
+
+	"""
 	def __init__(self, w, h,title="None"):
+		"""Constructor of Game.
+
+		It starts game UI, camera and tictactoe logic
+		:param w: width of the gui
+		:type name: int
+  		:param h: height of the gui
+		:type name: int
+  		:param title: title of the GUI
+		:type name: str
+		"""
 		super(Game, self).__init__(w, h,title)
 
 
@@ -69,21 +93,33 @@ class Game(Gui_Window):
 		self.aiplayer = True
 
 		self.net=Tic_net_client()
-		if not os.path.exists("name.txt"):
-			f = open("name.txt", "w")
-			f.writelines(["no name"])
-			f.flush()
-			f.close()
+		#if not os.path.exists("name.txt"):
+		#	f = open("name.txt", "w")
+		#	f.writelines(["no name"])
+		#	f.flush()
+		#	f.close()
+#
+		#f = open("name.txt", "r")
+		#self.net.name = f.readline()
+		#f.close()
+		#self.net.Start()
 
-		f = open("name.txt", "r")
-		self.net.name = f.readline()
-		f.close()
+		parser = configparser.ConfigParser()
+		if not os.path.exists('game.cfg') :
+			parser['Player'] = {'name': 'Mario'}
+			parser.write(open('game.cfg', 'w'))
+
+		parser.read("game.cfg")
+		try:
+			self.net.name = parser.get('Player', 'name')
+		except:
+			print("no [Player] or name in game.cfg")
+
 		self.net.Start()
-
 		self.next_player_list_update_t=time.time()+2;
 
 		self.Label_message="Challenging..."
-		self.opponent=("server",0) # 0 is no one
+		self.opponent=("server",0)
 		self.mark=None
 		
 		self.gotack=True
@@ -96,16 +132,32 @@ class Game(Gui_Window):
 
 
 	def set_frame(self, frame):
+		"""Set the actual frame of the GUI.
+
+		:param frame: frame to set
+		:type name: mat
+		"""
 		self.frame = frame
 
 	def drawGrid(self):
+		"""Draw the board grid 3x3 in the gui window.
+
+		"""
 		draw_list = imgui.get_window_draw_list()
 		draw_list.add_line(self.width/3, 0, self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
 		draw_list.add_line(2*self.width/3, 0, 2*self.width/3, self.height, imgui.get_color_u32_rgba(1,1,0,1), 3)
 		draw_list.add_line(0, self.height/3, self.width, self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
 		draw_list.add_line(0, 2*self.height/3, self.width, 2*self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
 
-	def draw_x(x,y,r):
+	def draw_x(x,y,r): # TODO may reduce operation
+		"""Draw an X at the gui window in the coordinate.
+		:param x: x coordinate
+		:type name: int
+		:param y: y coordinate
+		:type name: int
+		:param r: r length
+		:type name: int
+		"""
 		ltx=x-r
 		lty=y-r
 		rtx=x+r
@@ -128,6 +180,8 @@ class Game(Gui_Window):
 		# 4 accepting page
 
 	def handle_inbox(self):
+		"""It handle the incoming messages when the multiplayer game is on
+		"""
 		msgs=self.net.get_messages()
 		for m in msgs:
 			print(m)			
@@ -138,7 +192,6 @@ class Game(Gui_Window):
 					self.opponent=(m["name"],m["src"])
 					self.page_id=4
 			if m["data"] == "CANCEL" and m["src"]==self.opponent[1]:
-				#if self.page_id == 4:
 				self.opponent=("none",0)
 				self.page_id=0
 			if m["data"] == "ACCEPT" and m["src"]==self.opponent[1]:
@@ -161,6 +214,8 @@ class Game(Gui_Window):
 		pass
 
 	def context(self):
+		"""It process the conext of the game and show the specific game stage.
+		"""
 		self.handle_inbox()
 
 
@@ -179,7 +234,7 @@ class Game(Gui_Window):
 		imgui.begin("background",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE | imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
 		imgui.image(self.image_texture, w, h) 
 		imgui.end()
-		#self.cursorPosition=self.hands.cursorPosition # for graphics only
+
 		self.cursorPosition = self.hands.cursorPosition
 
 		#get click event
@@ -204,7 +259,7 @@ class Game(Gui_Window):
 			self.Draw_accepting_page()
 		else:
 			pass
-		#print("Position",self.hands.cursorPosition)
+
 		draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
 		draw_list.add_circle(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 14+15*(1-self.hands.progres), imgui.get_color_u32_rgba(0.9,0.9,0.8,1)) # cursore draw
 
@@ -213,7 +268,9 @@ class Game(Gui_Window):
 		imgui.pop_font()
 
 	def Draw_menu(self):
-
+		"""Gui logic for the main menu of the game, it shows the list of players
+		the button to start the game and the cursor of the finger.
+		"""
 		if self.next_player_list_update_t<time.time():
 			print("refresh players")
 			self.net.refresh_playes()
@@ -236,7 +293,6 @@ class Game(Gui_Window):
 			p,ttl=user
 			imgui.selectable(str(id)+". "+p , id==self.last_hoverred_selectable)
 			if is_over(imgui.core.get_item_rect_min(),imgui.core.get_item_rect_max(),self.hands.cursorPosition):
-				#imgui.core.get_item_rect_max()
 				self.last_hoverred_selectable=id
 				if self.isClicked:
 					self.opponent=(p,id)
@@ -250,6 +306,9 @@ class Game(Gui_Window):
 
 		pass
 	def Draw_game(self):
+		"""Gui logic for the game stage, it shows the grid of the game and let the player
+		draw the symbol in it with the fingers untill the game is over. Its only agains the AI player.
+		"""
 		w,h=self.width,self.height
 		if self.game_logic.is_win is None:
 			if self.isClicked:
@@ -284,14 +343,17 @@ class Game(Gui_Window):
 
 
 
-
 	def Draw_challange_page(self):
+		"""Gui logic for challenge page
+		"""
 		imgui.text("Challenging "+str(self.opponent[1])+". "+self.opponent[0] )
 		if hand_button("Cancel",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			data={"data":"CANCEL"}
 			self.net.send(data,self.opponent[1])
 			self.page_id=0
-	def Draw_accepting_page(self):	
+	def Draw_accepting_page(self):
+		"""Gui logic for accepting challenge page
+		"""
 		imgui.text("You have been challanged! "+str(self.opponent[1])+". "+self.opponent[0] )
 		if hand_button("Accept",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			data={"data":"ACCEPT"}
@@ -309,6 +371,10 @@ class Game(Gui_Window):
 
 
 	def Draw_game_online(self):
+		"""Gui logic for the game stage, it shows the grid of the game and let the player
+		draw the symbol in it with the fingers untill the game is over. Its versus a real player and it
+		works with networking.
+		"""
 		w,h=self.width,self.height
 		if self.game_logic.is_win is None:
 
@@ -358,6 +424,8 @@ class Game(Gui_Window):
 
 
 	def start_loop(self):
+		"""Main loop of the game GUI, it calls every time to render_frame untill the game finishes
+		"""
 		try:
 			while not glfw.window_should_close(self.window):
 				self.render_frame()
