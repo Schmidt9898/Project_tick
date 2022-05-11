@@ -5,7 +5,7 @@ from Gui import *
 import cv2
 import traceback
 import imgui
-from server import Tic_net_client
+from ticlient import Tic_net_client
 import datetime
 
 def hand_button(label,x,y,sx,sy,cursore=(0,0)):

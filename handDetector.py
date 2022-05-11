@@ -30,7 +30,7 @@ class handsDetector:
         self.cursorPosition = (0,0)
         self.startPosition = (0,0)
         self.isAction=False
-        self.distance_treshold=30.0
+        self.distance_treshold=50.0
         self.progres=1.0
         self.start_time=time.time()
 
