@@ -62,8 +62,7 @@ class Game(Gui_Window):
 		self.game_logic=Tictactoe()
 		self.playerNumber = 0
 
-
-		self.vs = WebcamVideoStream().start()
+		self.vs = WebcamVideoStream(cv.CAP_ANY).start()
 		self.hands = handsDetector(2)
 		self.prevHandState = ""
 
@@ -86,6 +85,11 @@ class Game(Gui_Window):
 		self.Label_message="Challenging..."
 		self.opponent=("server",0) # 0 is no one
 		self.mark=None
+		
+		self.gotack=True
+		self.last_step=None
+		self.last_step_time=time.time()
+		
 
 
 
@@ -101,7 +105,7 @@ class Game(Gui_Window):
 		draw_list.add_line(0, self.height/3, self.width, self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
 		draw_list.add_line(0, 2*self.height/3, self.width, 2*self.height/3, imgui.get_color_u32_rgba(1,1,0,1), 3)
 
-	def draw_x(x,y,r): # TODO may reduce operation
+	def draw_x(x,y,r):
 		ltx=x-r
 		lty=y-r
 		rtx=x+r
@@ -126,12 +130,12 @@ class Game(Gui_Window):
 	def handle_inbox(self):
 		msgs=self.net.get_messages()
 		for m in msgs:
-			print(m)					# TODO remove False
-			if m["dest"] != self.net.id and False: # scip if its not sent to us
+			print(m)			
+			if m["dest"] != self.net.id: # scip if its not sent to us
 				continue
 			if m["data"] == "CHALLENGE":
 				if self.page_id == 0:
-					self.opponent=("todo name",m["src"])
+					self.opponent=(m["name"],m["src"])
 					self.page_id=4
 			if m["data"] == "CANCEL" and m["src"]==self.opponent[1]:
 				#if self.page_id == 4:
@@ -145,6 +149,14 @@ class Game(Gui_Window):
 			if m["data"] == "STEP" and m["src"]==self.opponent[1]:
 				mark = 1 if self.mark==0 else 0
 				self.game_logic.step(mark,m["to"])
+				data={"data":"ACK","to":m["to"]}
+				self.net.send(data,self.opponent[1])
+			if m["data"] == "ACK" and m["src"]==self.opponent[1]:
+				if m["to"] == self.last_step:
+					self.gotack=True
+					#print("GOOOOOOOD")
+					self.game_logic.step(self.mark,self.last_step)
+				pass
 
 		pass
 
@@ -165,7 +177,7 @@ class Game(Gui_Window):
 		imgui.set_next_window_size(self.width, self.height)
 
 		imgui.begin("background",closable=False,flags=imgui.WINDOW_NO_SCROLLBAR | imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_NO_SCROLL_WITH_MOUSE | imgui.WINDOW_NO_BRING_TO_FRONT_ON_FOCUS)
-		imgui.image(self.image_texture, w, h) ## TODO different size
+		imgui.image(self.image_texture, w, h) 
 		imgui.end()
 		#self.cursorPosition=self.hands.cursorPosition # for graphics only
 		self.cursorPosition = self.hands.cursorPosition
@@ -195,23 +207,7 @@ class Game(Gui_Window):
 		#print("Position",self.hands.cursorPosition)
 		draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
 		draw_list.add_circle(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 14+15*(1-self.hands.progres), imgui.get_color_u32_rgba(0.9,0.9,0.8,1)) # cursore draw
-		#if self.hands.holdStatus == 0:
-		#	circle_color = imgui.get_color_u32_rgba(0.1,0.7,0.8,1)
-		#else:
-		#	circle_color = imgui.get_color_u32_rgba(0.8,0.7,0.1,1)
-#
-		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-		#	draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, circle_color) # cursore draw
-		#else:
-		#	draw_list.add_circle_filled(self.cursorPosition[0], self.cursorPosition[1], 15, circle_color) # cursore draw
-#
-#
-		#if self.hands.holdStatus == 1 or self.hands.holdStatus == 2:
-		#	time_delta = (datetime.datetime.now() - self.hands.closedTime).total_seconds()
-		#	if time_delta != 0 :
-		#		time_prop = (self.hands.holdTime/(time_delta))
-		#		if time_prop > 5:
-		#			time_prop = 5
+
 		imgui.end()
 		imgui.pop_style_color(1)
 		imgui.pop_font()
@@ -219,12 +215,12 @@ class Game(Gui_Window):
 	def Draw_menu(self):
 
 		if self.next_player_list_update_t<time.time():
-			#print("refresh players")
+			print("refresh players")
 			self.net.refresh_playes()
 			self.next_player_list_update_t=time.time()+2
 
 
-		if hand_button("Play against BOB the BOT",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
+		if hand_button("Play against BOB\n the BOT",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
 			self.game_logic.reset()
@@ -246,11 +242,9 @@ class Game(Gui_Window):
 					self.opponent=(p,id)
 					self.Label_message="Challenging "+str(id)+". "+p
 					self.page_id=2
-					data={"data":"CHALLENGE"}
+					data={"data":"CHALLENGE","name":self.net.name}
 					self.net.send(data,id)
-					#print("i selected",id)
 
-		#imgui.selectable("Not Selected", False)
 		imgui.listbox_footer()
 		imgui.end_child()
 
@@ -318,12 +312,23 @@ class Game(Gui_Window):
 		w,h=self.width,self.height
 		if self.game_logic.is_win is None:
 
-			if self.isClicked:
-				#print("aca")
-				squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
-				data={"data":"STEP","to":squareNumber}
-				self.net.send(data,self.opponent[1])
-				self.game_logic.step(self.mark,squareNumber)
+			if not self.gotack:
+				if self.last_step_time+1 < time.time() and self.last_step != None:
+					data={"data":"STEP","to":self.last_step}
+					self.gotack=False
+					self.last_step_time=time.time()
+					self.net.send(data,self.opponent[1])
+			else:
+				if self.isClicked:
+					#print("aca")
+					squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
+					print(squareNumber)
+					data={"data":"STEP","to":squareNumber}
+					self.gotack=False
+					self.last_step=squareNumber
+					self.net.send(data,self.opponent[1])
+					self.last_step_time=time.time()
+
 
 			self.drawGrid()
 			u_h=h/3
@@ -341,8 +346,6 @@ class Game(Gui_Window):
 			else:
 				imgui.text("You losed to "+str(self.opponent[1])+". "+self.opponent[0] )
 			if hand_button("OK",self.width/4*3,350,200,100,self.hands.cursorPosition) and self.isClicked:
-				#data={"data":"CANCEL"}
-				#self.net.send(data,self.opponent[1])
 				self.opponent=("server",0)
 				self.page_id=0
 
@@ -359,9 +362,8 @@ class Game(Gui_Window):
 			while not glfw.window_should_close(self.window):
 				self.render_frame()
 		except Exception as e:
+			#raise e
 			print(str(e))
-    		#traceback.print_exc()
-			#print(sys.exc_info())
 		finally:
 			self.impl.shutdown()
 			glfw.terminate()

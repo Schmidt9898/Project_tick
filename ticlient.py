@@ -13,18 +13,9 @@ class Tic_net_client():
 		self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		# Enable broadcasting mode
 		self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
 		# Bind to the server address
 		self.client.bind(('',port))
 		self.client.settimeout(1.2)
-
-		# Tell the operating system to add the socket to the multicast group
-		# on all interfaces.
-		#group = socket.inet_aton(self.multicast_group)
-		#mreq = struct.pack('4sL', group, socket.INADDR_ANY)
-		#self.client.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
-		#self.address=None
 
 		self.name="Laci"
 		#in and outbox
@@ -52,14 +43,8 @@ class Tic_net_client():
 	
 
 	def send(self,obj,dest=0): # 0 is all
-		#obj.id=self.id
 		if "type" not in obj.keys():
 			obj["type"]="cmd"
-		#wait for server
-		#while self.address is None:
-		#	print("waiting")
-		#	time.sleep(0.1)
-		#	pass
 		if self.id == 0:
 			data = {"src": self.id, "dest": 0,"type":"WHO"}
 			json_dump = json.dumps(data)
@@ -105,7 +90,7 @@ class Tic_net_client():
 					#print("-----i am sending my id")
 					sent = self.send({"type":"IAM","id":self.id,"name":self.name})
 				if msg["type"]=="IAM":
-					self.clients_avil[msg["id"]]=(msg["name"],2)
+					self.clients_avil[msg["id"]]=(msg["name"],10)
 				if msg["type"]=="cmd":
 					self.inbox.append(msg)
 
@@ -127,55 +112,32 @@ class Tic_net_client():
 
 
 if __name__ == "__main__":
-	#tn=Tic_net_server()
-	#tn.Start()
-	
 	print("receiver")
 	tn=Tic_net_client()
 	tn.Start()
-	#tn.send({"data":"helo"})
 	while True:
-		s=input()
-		if s == "get":
-			tn.refresh_playes()
-			print(tn.clients_avil)
-		elif s == "in":
-			print(tn.get_messages())
-		else:
-			tn.send({"data":s})
-			print(tn.clients_avil)
-		#print(tn.get_new_id())
-		#time.sleep(1)
+		msgs=tn.get_messages()
+		for m in msgs:
+			print(m)
+			if m["dest"] != tn.id: # scip if its not sent to us
+				continue
+			if m["data"] == "CHALLENGE":
+				data={"data":"ACCEPT"}
+				#tn.gotack=False
+				tn.send(data,m["src"])
+			if m["data"] == "CANCEL" and m["src"]:
+				pass
+			if m["data"] == "ACCEPT" and m["src"]:
+				pass
+			if m["data"] == "STEP" and m["src"]:
+				data={"data":"ACK","to":m["to"]}
+				#tn.gotack=False
+				tn.send(data,m["src"])
+				data={"data":"STEP","to":random.randint(0,8)}
+				tn.send(data,m["src"])
+				pass
+			if m["data"] == "ACK" and m["src"]:
+				#self.gotack=True
+				pass
 
-
-#
-#
-#
-#message = 'very important data'
-#multicast_group = ('224.1.1.1', 10000)
-#
-## Create the datagram socket
-#sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#
-## Set a timeout so the socket does not block indefinitely when trying
-## to receive data.
-#sock.settimeout(2)
-#
-## Set the time-to-live for messages to 1 so they do not go past the
-## local network segment.
-#ttl = 2
-#sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-#
-#
-#sent = sock.sendto(b"message", multicast_group)
-#
-#while True:
-#	try:
-#		data, address = sock.recvfrom(1024)
-#		print (address,"\n",data)
-#		sent = sock.sendto(data, multicast_group)
-#	except:
-#		print ("Ping...")
-#		sent = sock.sendto(b"PING", multicast_group)
-#
-#	#time.sleep(1)
+		pass
