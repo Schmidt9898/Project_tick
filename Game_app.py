@@ -42,8 +42,13 @@ class Game(Gui_Window):
 		io = imgui.get_io()												 #font
 		self.new_font = io.fonts.add_font_from_file_ttf("./DroidSans.ttf", 30,)
 		self.impl.refresh_font_texture()
-
-		self.page_id=0 #0 menu 1 game 2 etc..
+		# states
+		# 0 menu machmaking
+		# 1 in game ai bot
+		# 2 challenging
+		# 3 game online
+		# 4 accepting page
+		self.page_id=0 #0 menu 1 game 2 e
 
 		self.image_texture =None
 
@@ -82,6 +87,17 @@ class Game(Gui_Window):
 		self.net.Start()
 		self.next_player_list_update_t=time.time()+2;
 
+		self.Label_message="Challenging..."
+		self.opponent=("server",0) # 0 is no one
+		self.mark=None
+
+		
+
+
+
+
+
+
 
 
 	def set_frame(self, frame):
@@ -108,7 +124,43 @@ class Game(Gui_Window):
 		draw_list.add_line( lbx,lby,rtx,rty , imgui.get_color_u32_rgba(1,1,0,1), 3 )
 
 
+
+		# states
+		# 0 menu machmaking
+		# 1 in game ai bot
+		# 2 challenging
+		# 3 game online
+		# 4 accepting page
+
+	def handle_inbox(self):
+		msgs=self.net.get_messages()
+		for m in msgs:
+			print(m)					# TODO remove False
+			if m["dest"] != self.net.id and False: # scip if its not sent to us
+				continue
+			if m["data"] == "CHALLENGE":
+				if self.page_id == 0:
+					self.opponent=("todo name",m["src"])
+					self.page_id=4
+			if m["data"] == "CANCEL" and m["src"]==self.opponent[1]:
+				#if self.page_id == 4:
+				self.opponent=("none",0)
+				self.page_id=0
+			if m["data"] == "ACCEPT" and m["src"]==self.opponent[1]:
+				if self.page_id == 2:
+					self.mark = 1 if self.net.id<self.opponent[1] else 0
+					self.game_logic.reset()
+					self.page_id=3
+			if m["data"] == "STEP" and m["src"]==self.opponent[1]:
+				mark = 1 if self.mark==0 else 0
+				self.game_logic.step(mark,m["to"])
+
+		pass
+
 	def context(self):
+		self.handle_inbox()
+
+
 		imgui.push_font(self.new_font)
 		io = imgui.get_io()
 
@@ -129,10 +181,6 @@ class Game(Gui_Window):
 
 		#get click event
 		self.isClicked=self.hands.isAction
-		#if(self.hands.holdStatus == 2): # something feels off
-		#	self.isClicked=True
-		#self.prevHandState = self.hands.state
-
 
 
 		imgui.set_next_window_position(0, 0, 1, pivot_x =0, pivot_y = 0)
@@ -145,9 +193,14 @@ class Game(Gui_Window):
 			self.Draw_menu()
 		elif self.page_id==1:
 			self.Draw_game()
+		elif self.page_id==2:
+			self.Draw_challange_page()
+		elif self.page_id==3:
+			self.Draw_game_online()
+		elif self.page_id==4:
+			self.Draw_accepting_page()
 		else:
 			pass
-
 		#print("Position",self.hands.cursorPosition)
 		draw_list.add_circle_filled(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 15, imgui.get_color_u32_rgba(0.1,0.7,0.8,1)) # cursore draw
 		draw_list.add_circle(self.hands.cursorPosition[0], self.hands.cursorPosition[1], 14+15*(1-self.hands.progres), imgui.get_color_u32_rgba(0.9,0.9,0.8,1)) # cursore draw
@@ -183,15 +236,14 @@ class Game(Gui_Window):
 		if hand_button("Play against BOB the BOT",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
 			print("most")
 			self.page_id=1
-		#if hand_button("alma",self.width/2,200,200,100,self.hands.cursorPosition) and self.isClicked:
-		#	print("most")
-		#	self.page_id=1
 
-		imgui.dummy(100,100)
-		imgui.dummy(100,10)
+		imgui.dummy(100,30)
 		imgui.same_line()
+		imgui.begin_child("##listc", -50, 0, border=False)
+		imgui.dummy(30,0)
+		imgui.text("Available players")
 
-		imgui.listbox_header("List", 200, 300)
+		imgui.listbox_header("##", 200, 300)
 		for id,user, in self.net.clients_avil.items():
 			p,ttl=user
 			imgui.selectable(str(id)+". "+p , id==self.last_hoverred_selectable)
@@ -199,10 +251,16 @@ class Game(Gui_Window):
 				#imgui.core.get_item_rect_max()
 				self.last_hoverred_selectable=id
 				if self.isClicked:
-					print("i selected",id)
+					self.opponent=(p,id)
+					self.Label_message="Challenging "+str(id)+". "+p
+					self.page_id=2
+					data={"data":"CHALLENGE"}
+					self.net.send(data,id)
+					#print("i selected",id)
 
 		#imgui.selectable("Not Selected", False)
 		imgui.listbox_footer()
+		imgui.end_child()
 
 		pass
 	def Draw_game(self):
@@ -236,6 +294,50 @@ class Game(Gui_Window):
 		#p = int(self.cursorPosition[1]/h*3)*3+int(self.cursorPosition[0]/w*3)
 		#print("y",int(p/3)*(u_h),"x",int(p%3)*(u_w))
 		pass
+	def Draw_challange_page(self):
+		imgui.text("Challenging "+str(self.opponent[1])+". "+self.opponent[0] )
+		if hand_button("Cancel",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
+			data={"data":"CANCEL"}
+			self.net.send(data,self.opponent[1])
+			self.page_id=0
+	def Draw_accepting_page(self):	
+		imgui.text("You have been challanged! "+str(self.opponent[1])+". "+self.opponent[0] )
+		if hand_button("Accept",self.width/4*3,200,200,100,self.hands.cursorPosition) and self.isClicked:
+			data={"data":"ACCEPT"}
+			self.net.send(data,self.opponent[1])
+			self.page_id=3
+			self.mark = 1 if self.net.id<self.opponent[1] else 0
+			self.game_logic.reset()
+		if hand_button("Cancel",self.width/4*3,350,200,100,self.hands.cursorPosition) and self.isClicked:
+			data={"data":"CANCEL"}
+			self.net.send(data,self.opponent[1])
+			self.opponent=("server",0)
+			self.page_id=0
+
+	def Draw_game_online(self):
+		w,h=self.width,self.height
+
+		if self.isClicked:
+			#print("aca")
+			squareNumber = int(self.hands.cursorPosition[1]/h*3)*3+int(self.hands.cursorPosition[0]/w*3)
+			data={"data":"STEP","to":squareNumber}
+			self.net.send(data,self.opponent[1])
+			self.game_logic.step(self.mark,squareNumber)
+
+		self.drawGrid()
+		u_h=h/3
+		u_w=w/3
+		draw_list=imgui.get_window_draw_list()
+		for p,item in enumerate(self.game_logic.get_state()):
+			if item == "o":
+				draw_list.add_circle(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3, imgui.get_color_u32_rgba(1,1,0,1),32, thickness=3)
+			elif item == "x":
+				Game.draw_x(int(p%3)*(u_w)+u_w/2, int(p/3)*(u_h)+u_h/2, self.height/self.ygrids/3)
+
+
+		if  self.game_logic.is_win is not None:
+			print("won player", self.game_logic.is_win)
+
 	def Draw_test(self):
 		pass
 
