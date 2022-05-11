@@ -21,7 +21,7 @@ class Tictactoe():
 		self.marks[mark_].append(i)
 		self.mark = (self.mark+1) % 2
 		return True
-	
+
 	def reset(self):
 		self.marks=[[],[]]
 		self.mark=0# 0x 1 o
@@ -64,10 +64,51 @@ class Tictactoe():
 		return state
 
 	def ai_player_move(self):
-		matrix = np.reshape(self.get_state(), (3, 3))
-		while self.step(1,random.randint(0, 8)):
-			pass
+		board  = self.get_state()
+		# while self.step(1,random.randint(0, 8)):
+		# 	pass
+		possibleMoves = [x for x, symbol in enumerate(board) if symbol == ' ']
+		#check if there is any winning move for ai after player to block
+		for symbol in ["o","x"]:
+			for i in possibleMoves:
+				bc = board[:]
+				bc[i] = symbol
+				if ((bc[6] == symbol and bc[7] == symbol and bc[8] == symbol) or
+    			(bc[3] == symbol and bc[4] == symbol and bc[5] == symbol) or
+    			(bc[0] == symbol and bc[1] == symbol and bc[2] == symbol) or
+    			(bc[6] == symbol and bc[3] == symbol and bc[0] == symbol) or
+    			(bc[7] == symbol and bc[4] == symbol and bc[1] == symbol) or
+    			(bc[8] == symbol and bc[5] == symbol and bc[2] == symbol) or
+    			(bc[6] == symbol and bc[4] == symbol and bc[2] == symbol) or
+    			(bc[8] == symbol and bc[4] == symbol and bc[0] == symbol)):
+					move = i
+					return self.step(1,move)
 
+		#try to put in the corner
+		cornersOpen = []
+		for i in possibleMoves:
+			if i in [0,2,6,8]:
+				cornersOpen.append(i)
+		if len(cornersOpen) > 0:
+			ln = len(cornersOpen)
+			r = random.randrange(0, ln)
+			return self.step(1,cornersOpen[r])
+
+		#try to put in center
+		if 5 in possibleMoves:
+			move = 4
+			return self.step(1,move)
+
+		#try to put in edges
+		edgesOpen = []
+		for i in possibleMoves:
+			if i in [1,3,5,7]:
+				edgesOpen.append(i)
+
+		if len(edgesOpen) > 0:
+			ln = len(edgesOpen)
+			r = random.randrange(0, ln)
+			return self.step(1,edgesOpen[r])
 
 
 
