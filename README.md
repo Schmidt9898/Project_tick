@@ -5,7 +5,7 @@ execute the following comand in the main directory:
 (make sure that u have a web camera)
 
 ```
-pip install -r requirements.txt
+pip install -r Requirements.txt
 python3 main.py
 ```
 
